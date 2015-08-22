@@ -10,7 +10,7 @@ UKinectAnimInstance::UKinectAnimInstance(const class FObjectInitializer& PCIP) :
 KinectOverrideEnabled(false),
 EvaluateAnimationGraph(true)
 {
-	
+
 
 	if (CurrentSkeleton)
 	{
@@ -63,6 +63,8 @@ bool UKinectAnimInstance::NativeEvaluateAnimation(FPoseContext& Output)
 
 		ProccessSkeleton();
 
+
+		/*
 		uint32 i = 0;
 		for (auto BoneName : BonesToRetarget)
 		{
@@ -74,13 +76,13 @@ bool UKinectAnimInstance::NativeEvaluateAnimation(FPoseContext& Output)
 
 				if (BoneIndex >= 0)
 				{
-					FA2CSPose CSPose;
 
-					CSPose.AllocateLocalPoses(RequiredBones, OwningComponent->LocalAtoms);
+					FCSPose<FCompactPose> CSPose;
+
+					CSPose.InitPose(Output.Pose);
 
 
-
-					auto BoneTransform = CSPose.GetComponentSpaceTransform(BoneIndex);
+					auto BoneTransform = CSPose.GetComponentSpaceTransform(FCompactPoseBoneIndex(BoneIndex));
 
 					//BoneTransform.SetToRelativeTransform(GetOwningComponent()->GetComponentToWorld());
 
@@ -88,20 +90,37 @@ bool UKinectAnimInstance::NativeEvaluateAnimation(FPoseContext& Output)
 
 					BoneTransform.SetRotation(KinectBoneRotators[i].Quaternion());
 
+
+					TArray<FBoneTransform> BoneTransforms;
+
+					BoneTransforms.Add(FBoneTransform(FCompactPoseBoneIndex(BoneIndex), BoneTransform));
+
+					CSPose.SafeSetCSBoneTransforms(BoneTransforms);
+
+//					CSPose.SetComponentSpaceTransform(FCompactPoseBoneIndex(BoneIndex), BoneTransform);
+
+
+
+
 					int32 ParentIndex = OwningComponent->GetBoneIndex(OwningComponent->GetParentBone(BoneName));
+
+
 					if (ParentIndex >= 0)
 					{
 						Output.Pose[FCompactPoseBoneIndex(BoneIndex)].SetFromMatrix(BoneTransform.ToMatrixWithScale());
 
-						Output.Pose[FCompactPoseBoneIndex(BoneIndex)].SetToRelativeTransform(CSPose.GetComponentSpaceTransform(ParentIndex));
+						//Output.Pose[FCompactPoseBoneIndex(BoneIndex)].SetToRelativeTransform(CSPose.GetComponentSpaceTransform(FCompactPoseBoneIndex(BoneIndex)));
 					}
 
+
+					Output.Pose[FCompactPoseBoneIndex(BoneIndex)] = CSPose.GetComponentSpaceTransform(FCompactPoseBoneIndex(BoneIndex));
 				}
 			}
 
 			++i;
 
 		}
+		*/
 	}
 
 
