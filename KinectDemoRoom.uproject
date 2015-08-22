@@ -1,0 +1,16 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{FB08659E-41ED-4305-1638-D9AC2FE27D9D}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "KinectDemoRoom",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	]
+}
