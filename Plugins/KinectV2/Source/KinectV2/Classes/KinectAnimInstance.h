@@ -8,6 +8,9 @@
 #include "KinectAnimInstance.generated.h"
 
 
+
+
+
 UCLASS(MinimalApi, BlueprintType, Blueprintable)
 class UKinectAnimInstance : public UAnimInstance
 {

@@ -231,7 +231,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,EditFixedSize, Category = "Kinect")
 		TArray<FBody> Bodies;   ///< The bodies
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Kinect")
 		FPlane FloorPlane;  ///< The floor plane
 
 

@@ -192,7 +192,8 @@ FBodyFrame::FBodyFrame(IBody** ppBodies, const Vector4& floorPlane){
 		Bodies[i] = FBody(ppBodies[i]);
 	}
 
-	FloorPlane = FPlane(FVector4(floorPlane.x, floorPlane.y, floorPlane.z, floorPlane.w));
+
+	FloorPlane = FPlane(FVector4(FRotator(0.f, 180.f, 0.f).RotateVector(FVector(-floorPlane.z, -floorPlane.x, floorPlane.y)), floorPlane.w));
 
 }
 
@@ -444,7 +445,13 @@ float UKinectFunctionLibrary::RadiansToDegrees(const float &InRadians){
 }
 
 TEnumAsByte<EJoint::Type> UKinectFunctionLibrary::GetBoneParent(const TEnumAsByte<EJoint::Type> &InBone){
-	return BoneMap[InBone];
+
+	if (InBone < BoneMap.Num())
+	{
+		return BoneMap[InBone];
+	}
+	
+	return TEnumAsByte<EJoint::Type>(EJoint::JointType_Count);
 }
 
 FVector UKinectFunctionLibrary::GetDirVec(const FVector& From, const FVector& To){
