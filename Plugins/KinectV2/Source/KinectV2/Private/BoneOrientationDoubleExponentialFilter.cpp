@@ -13,17 +13,32 @@ FTransformSmoothParameters& FTransformSmoothParameters::operator=(const FTransfo
 	return *this;
 }
 
-UBoneOrientationDoubleExponentialFilter::UBoneOrientationDoubleExponentialFilter(const FObjectInitializer& ObjectInitializer) :Super(ObjectInitializer), IsInit(false)
+FTransformSmoothParameters::FTransformSmoothParameters(float SmoothingValue, float CorrectionValue, float PredictionValue, float JitterRadiusValue, float MaxDeviationRadiusValue)
+{
+	this->MaxDeviationRadius = MaxDeviationRadiusValue; 
+	this->Smoothing = SmoothingValue;                  
+	this->Correction = CorrectionValue;                 
+	this->Prediction = PredictionValue;                 
+	this->JitterRadius = JitterRadiusValue;             
+}
+
+FBoneOrientationDoubleExponentialFilter::FBoneOrientationDoubleExponentialFilter() : IsInit(false), SmoothParameters(0.5f, 0.8f, 0.75f, 0.1f, 0.1f)
 {
 
 }
 
-void UBoneOrientationDoubleExponentialFilter::Init()
+/*
+FBoneOrientationDoubleExponentialFilter::FBoneOrientationDoubleExponentialFilter(const FObjectInitializer& ObjectInitializer) :Super(ObjectInitializer), IsInit(false)
+{
+
+}
+*/
+void FBoneOrientationDoubleExponentialFilter::Init()
 {
 	Init(0.5f, 0.8f, 0.75f, 0.1f, 0.1f);
 }
 
-void UBoneOrientationDoubleExponentialFilter::Init(float SmoothingValue, float CorrectionValue, float PredictionValue, float JitterRadiusValue, float MaxDeviationRadiusValue)
+void FBoneOrientationDoubleExponentialFilter::Init(float SmoothingValue, float CorrectionValue, float PredictionValue, float JitterRadiusValue, float MaxDeviationRadiusValue)
 {
 	SmoothParameters = FTransformSmoothParameters();
 
@@ -36,7 +51,7 @@ void UBoneOrientationDoubleExponentialFilter::Init(float SmoothingValue, float C
 	IsInit = true;
 }
 
-void UBoneOrientationDoubleExponentialFilter::Init(const FTransformSmoothParameters& TransformSmoothParameters)
+void FBoneOrientationDoubleExponentialFilter::Init(const FTransformSmoothParameters& TransformSmoothParameters)
 {
 	SmoothParameters = TransformSmoothParameters;
 	Reset();
@@ -44,26 +59,26 @@ void UBoneOrientationDoubleExponentialFilter::Init(const FTransformSmoothParamet
 
 }
 
-void UBoneOrientationDoubleExponentialFilter::Reset()
+void FBoneOrientationDoubleExponentialFilter::Reset()
 {
 	History.Empty();
 
 	History.AddDefaulted(25);
 }
 
-void UBoneOrientationDoubleExponentialFilter::UpdateFilter(FBody InBody, FBody& Body)
+FBody FBoneOrientationDoubleExponentialFilter::UpdateFilter(const struct FBody& InBody)
 {
 
-	Body = InBody;
+	FBody OutBody = InBody;
 
-	if (!Body.bIsTracked)
+	if (!OutBody.bIsTracked)
 	{
-		return;
+		return OutBody;
 	}
 
 	if (!IsInit)
 	{
-		Init();
+		Init(SmoothParameters);
 	}
 
 	FTransformSmoothParameters TempSmoothingParams = FTransformSmoothParameters();
@@ -77,7 +92,7 @@ void UBoneOrientationDoubleExponentialFilter::UpdateFilter(FBody InBody, FBody& 
 
 
 
-	for(auto Bone : Body.KinectBones)
+	for(auto Bone : OutBody.KinectBones)
 	{
 		// If not tracked, we smooth a bit more by using a bigger jitter radius
 		// Always filter feet highly as they are so noisy
@@ -92,9 +107,10 @@ void UBoneOrientationDoubleExponentialFilter::UpdateFilter(FBody InBody, FBody& 
 			TempSmoothingParams.MaxDeviationRadius = SmoothParameters.MaxDeviationRadius;
 		}
 
-		FilterJoint(Body, Bone.JointTypeEnd, TempSmoothingParams);
+		FilterJoint(OutBody, Bone.JointTypeEnd, TempSmoothingParams);
 	}
 
+	return OutBody;
 }
 
 FQuat EnsureQuaternionNeighborhood(const FQuat& quaternionA, const FQuat& quaternionB)
@@ -141,7 +157,7 @@ float QuaternionAngle(const FQuat& rotation)
 	return angle;
 }
 
-void UBoneOrientationDoubleExponentialFilter::FilterJoint(FBody& Body, EJoint::Type Jt, const FTransformSmoothParameters& TransformSmoothParameters)
+void FBoneOrientationDoubleExponentialFilter::FilterJoint(FBody& Body, EJoint::Type Jt, const FTransformSmoothParameters& TransformSmoothParameters)
 {
 
 	FQuat filteredOrientation;

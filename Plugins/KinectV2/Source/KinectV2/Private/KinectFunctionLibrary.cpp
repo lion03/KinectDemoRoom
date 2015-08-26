@@ -9,25 +9,21 @@
 #include "KinectPlayerController.h"
 #include "KinectV2InputDevice.h"
 
-#include "OneEuroFilter.h"
 
 #define NumOfKinectBones 25
 
+#pragma region Statics
+
 FEnableBodyJoystick UKinectFunctionLibrary::EnableBodyJoystickEvent;
 FMapBodyCoordToScreenCoord UKinectFunctionLibrary::MapBodyCoordToScreenCoordEvent;
-FOneEuroFilterSetEnableEvent UKinectFunctionLibrary::OneEuroFilterSetEnableEvent;
-FOneEuroFilterSetFreqEvent UKinectFunctionLibrary::OneEuroFilterSetFreqEvent;
-FOneEuroFilterSetMinCutoffEvent UKinectFunctionLibrary::OneEuroFilterSetMinCutoffEvent;
-FOneEuroFilterSetBetaEvent UKinectFunctionLibrary::OneEuroFilterSetBetaEvent;
-FOneEuroFilterSetDCutOffEvent UKinectFunctionLibrary::OneEuroFilterSetDCutOffEvent;
-FOneEuroFilterSetFilterParamsEvent UKinectFunctionLibrary::OneEuroFilterSetFilterParamsEvent;
 FGetKinectManegerEvent UKinectFunctionLibrary::GetKinectManagerEvent;
 FGetKinectInputDevice UKinectFunctionLibrary::GetKinectInputDeviceEvent;
 FStartSensorEvent UKinectFunctionLibrary::StartSensorEvent;
 FShutdownSensorEvent UKinectFunctionLibrary::ShutdownSensorEvent;
 
+#pragma endregion
 
-TSharedPtr<KinectSkeletonOneEuroFilter> UKinectFunctionLibrary::KinectBoneFilter = TSharedPtr<KinectSkeletonOneEuroFilter>(new KinectSkeletonOneEuroFilter(30.f,1.5f,1.f,1.f));
+#pragma region Kinect Data Convertion
 
 TMap<TEnumAsByte<EJoint::Type>, TEnumAsByte<EJoint::Type>> UKinectFunctionLibrary::BoneMap;
 
@@ -325,6 +321,8 @@ FKinectBone& FKinectBone::operator=(const FKinectBone& Other)
 	return *this;
 }
 
+#pragma  endregion 
+
 FRotator UKinectFunctionLibrary::Vec4QuatToRotator(const FVector4& TheVec){
 
 	return FRotator(FQuat(TheVec.X, TheVec.Y, TheVec.Z, TheVec.W));
@@ -504,53 +502,6 @@ FVector2D UKinectFunctionLibrary::ConvertBodyPointToScreenPoint(const FVector&Bo
 	return FVector2D(-1, -1);
 }
 
-void UKinectFunctionLibrary::OneEuroFilterSetEnable(bool Enable)
-{
-	OneEuroFilterSetEnableEvent.ExecuteIfBound(Enable);
-}
-
-void UKinectFunctionLibrary::OneEuroFilterSetFreq(float Freq)
-{
-	OneEuroFilterSetFreqEvent.ExecuteIfBound(Freq);
-}
-
-void UKinectFunctionLibrary::OneEuroFilterSetMinCutoff(float MinCutoff)
-{
-	OneEuroFilterSetMinCutoffEvent.ExecuteIfBound(MinCutoff);
-}
-
-void UKinectFunctionLibrary::OneEuroFilterSetBeta(float Beta)
-{
-	OneEuroFilterSetBetaEvent.ExecuteIfBound(Beta);
-}
-
-void UKinectFunctionLibrary::OneEuroFilterSetDCutOff(float DCutoff)
-{
-	OneEuroFilterSetDCutOffEvent.ExecuteIfBound(DCutoff);
-}
-
-void UKinectFunctionLibrary::OneEuroFilterSetFilterParams(float freq, float minCutoff, float beta, float dCutoff)
-{
-	KinectBoneFilter->SetFilterParams(freq, minCutoff, beta, dCutoff);
-	OneEuroFilterSetFilterParamsEvent.ExecuteIfBound(freq,  minCutoff,  beta, dCutoff);
-}
-
-TArray<FTransform> UKinectFunctionLibrary::Filter(const TArray<FTransform>& KinectBoneTransforms, float timeStamp /*= UndefinedTime*/)
-{
-	return KinectBoneFilter->Filter(KinectBoneTransforms, timeStamp);
-}
-
-UKinectFunctionLibrary* UKinectFunctionLibrary::GetKinectFunctionLibraryInstance(bool& IsValid)
-{
-	IsValid = false;
-	UKinectFunctionLibrary* DataInstance = Cast<UKinectFunctionLibrary>(GEngine->GameSingleton);
-
-	if (!DataInstance) return NULL;
-	if (!DataInstance->IsValidLowLevel()) return NULL;
-
-	IsValid = true;
-	return DataInstance;
-}
 
 UKinectEventManager* UKinectFunctionLibrary::GetKinectEventManager()
 {
@@ -578,6 +529,14 @@ void UKinectFunctionLibrary::ShutdownSensor()
 	{
 		ShutdownSensorEvent.Execute();
 	}
+}
+
+
+FBody UKinectFunctionLibrary::GetSmoothedJoint(struct FBoneOrientationDoubleExponentialFilter& InFilter, const FBody& InBody)
+{
+
+	return InFilter.UpdateFilter(InBody);
+
 }
 
 TArray<FTransform> UKinectFunctionLibrary::MirrorKinectSkeleton(const FBody& BodyToMirror, float JointPosScale /*= 1.f*/)
@@ -611,17 +570,3 @@ TArray<FTransform> UKinectFunctionLibrary::MirrorKinectSkeleton(const FBody& Bod
 
 	return RetArray;
 }
-
-FKinectV2InputDevice* UKinectFunctionLibrary::GetKinectInputDevice(){
-
-	if (GetKinectInputDeviceEvent.IsBound())
-	{
-		return GetKinectInputDeviceEvent.Execute();
-	}
-
-	return nullptr;
-
-}
-
-
-

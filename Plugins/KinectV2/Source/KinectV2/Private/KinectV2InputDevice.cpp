@@ -8,7 +8,6 @@
 #include "KinectV2InputDevice.h"
 //#include "KinectListener.h"
 #include "KinectSensor.h"
-#include "OneEuroFilter.h"
 #include "AllowWindowsPlatformTypes.h"
 #include <WinUser.h>
 #include "HideWindowsPlatformTypes.h"
@@ -88,7 +87,6 @@ FKinectV2InputDevice::FKinectV2InputDevice(const TSharedRef< FGenericApplication
 				Active(true), 
 				MessageHandler(InMessageHandler), 
 				BodyJoystickEnabled(false), 
-				EnableOneEuroFilter(false),
 				ColorFrame(nullptr),
 				InfraredFrame(nullptr),
 				DepthFrame(nullptr),
@@ -96,11 +94,6 @@ FKinectV2InputDevice::FKinectV2InputDevice(const TSharedRef< FGenericApplication
 {
 
 	UKinectFunctionLibrary::EnableBodyJoystickEvent.BindRaw(this, &FKinectV2InputDevice::EnableBodyJoystick);
-	UKinectFunctionLibrary::OneEuroFilterSetEnableEvent.BindRaw(this, &FKinectV2InputDevice::SetEnableOneEuroFilter);
-	UKinectFunctionLibrary::OneEuroFilterSetFreqEvent.BindRaw(this, &FKinectV2InputDevice::SetOneEuroFilterFreq);
-	UKinectFunctionLibrary::OneEuroFilterSetBetaEvent.BindRaw(this, &FKinectV2InputDevice::SetOneEuroFilterBeta);
-	UKinectFunctionLibrary::OneEuroFilterSetMinCutoffEvent.BindRaw(this, &FKinectV2InputDevice::SetOneEuroFilterMinCutoff);
-	UKinectFunctionLibrary::OneEuroFilterSetDCutOffEvent.BindRaw(this, &FKinectV2InputDevice::SetOneEuroFilterDCutoff);
 	
 	ColorFrame = UTexture2D::CreateTransient(1920, 1080);
 	InfraredFrame = UTexture2D::CreateTransient(512, 424);
@@ -128,14 +121,12 @@ FKinectV2InputDevice::FKinectV2InputDevice(const TSharedRef< FGenericApplication
 		BodyIndexFrame->AddToRoot();
 		BodyIndexFrame->UpdateResource();
 	}
-	//FKinectSensor::Get();
-	KinectOneEuroFilter = TSharedPtr<KinectSkeletonOneEuroFilter>(new KinectSkeletonOneEuroFilter(120, 1, 0.007, 1));
+
 	KinectSensor = TSharedPtr<FKinectSensor>(new FKinectSensor());
 
 	UKinectFunctionLibrary::StartSensorEvent.BindRaw(KinectSensor.Get(), &FKinectSensor::StartSensor);
 	UKinectFunctionLibrary::ShutdownSensorEvent.BindRaw(KinectSensor.Get(), &FKinectSensor::ShutDownSensor);
 	UKinectFunctionLibrary::MapBodyCoordToScreenCoordEvent.BindRaw(KinectSensor.Get(), &FKinectSensor::BodyToScreen);
-	UKinectFunctionLibrary::OneEuroFilterSetFilterParamsEvent.BindRaw(this->KinectOneEuroFilter.Get(), &KinectSkeletonOneEuroFilter::SetFilterParams);
 
 	UClass* temp = UKinectEventManager::StaticClass();
 
@@ -282,31 +273,6 @@ void FKinectV2InputDevice::SetChannelValue(int32 ControllerId, FForceFeedbackCha
 
 }
 void FKinectV2InputDevice::SetChannelValues(int32 ControllerId, const FForceFeedbackValues &values){
-
-}
-
-void FKinectV2InputDevice::SetEnableOneEuroFilter(bool enable)
-{
-	EnableOneEuroFilter = enable;
-}
-
-void FKinectV2InputDevice::SetOneEuroFilterDCutoff(float dCutoff)
-{
-
-}
-
-void FKinectV2InputDevice::SetOneEuroFilterBeta(float beta)
-{
-
-}
-
-void FKinectV2InputDevice::SetOneEuroFilterMinCutoff(float minCutoff)
-{
-
-}
-
-void FKinectV2InputDevice::SetOneEuroFilterFreq(float freq)
-{
 
 }
 

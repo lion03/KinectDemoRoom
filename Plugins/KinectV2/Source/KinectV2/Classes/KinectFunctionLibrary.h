@@ -11,8 +11,11 @@
 #include "AllowWindowsPlatformTypes.h"
 #include "Kinect.h"
 #include "HideWindowsPlatformTypes.h"
+#include "BoneOrientationDoubleExponentialFilter.h"
 #include "KinectFunctionLibrary.generated.h"
 
+
+#pragma region Kinect Types
 
 UENUM(BlueprintType)
 namespace EJoint{
@@ -237,6 +240,10 @@ public:
 
 };
 
+#pragma endregion
+
+#pragma region Delegates
+
 DECLARE_MULTICAST_DELEGATE_OneParam(FBodyFrameEventSigneture, const FBodyFrame&);
 
 DECLARE_DELEGATE_OneParam(FEnableBodyJoystick, const bool&);
@@ -263,7 +270,8 @@ DECLARE_DELEGATE(FStartSensorEvent);
 
 DECLARE_DELEGATE(FShutdownSensorEvent);
 
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FNewSkeletonDetectedEventTest, const struct FBody&, NewBody);
+#pragma endregion
+
 
 UCLASS()
 class KINECTV2_API UKinectFunctionLibrary : public UBlueprintFunctionLibrary
@@ -651,102 +659,6 @@ public:
 
 		 static TArray<FTransform> MirrorKinectSkeleton(const FBody& BodyToMirror, float PosLocScale = 1.f);
 
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * One euro filter set enable.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	Enable	true to enable, false to disable.
-		 **************************************************************************************************/
-
-		 static void OneEuroFilterSetEnable(bool Enable);
-
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * One euro filter set frequency.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	Freq	The frequency.
-		 **************************************************************************************************/
-
-		 static void OneEuroFilterSetFreq(float Freq);
-
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * One euro filter set minimum cutoff.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	MinCutoff	The minimum cutoff.
-		 **************************************************************************************************/
-
-		 static void OneEuroFilterSetMinCutoff(float MinCutoff);
-
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * One euro filter set beta.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	Beta	The beta.
-		 **************************************************************************************************/
-
-		 static void OneEuroFilterSetBeta(float Beta);
-
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * One euro filter set d cut off.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	DCutoff	The cutoff.
-		 **************************************************************************************************/
-
-		 static void OneEuroFilterSetDCutOff(float DCutoff);
-
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * One euro filter set filter parameters.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	freq	 	The frequency.
-		 * @param	minCutoff	The minimum cutoff.
-		 * @param	beta	 	The beta.
-		 * @param	dCutoff  	The cutoff.
-		 **************************************************************************************************/
-
-		 static void OneEuroFilterSetFilterParams(float freq, float minCutoff, float beta, float dCutoff);
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * Filters.
-		 *
-		 * @author	Leon Rosengarten
-		 *
-		 * @param	KinectBoneTransforms	The kinect bone transforms.
-		 * @param	timeStamp				(Optional) the time stamp.
-		 *
-		 * @return	A TArray&lt;FTransform&gt;
-		 **************************************************************************************************/
-
-		 static TArray<FTransform> Filter(const TArray<FTransform>& KinectBoneTransforms, float timeStamp = -1.f);
-
-	UFUNCTION(BlueprintPure, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * Gets kinect function library instance.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param [in,out]	IsValid	The is valid.
-		 *
-		 * @return	null if it fails, else the kinect function library instance.
-		 **************************************************************************************************/
-
-		 static UKinectFunctionLibrary* GetKinectFunctionLibraryInstance(bool& IsValid);
-
 
 	UFUNCTION(BlueprintPure, Category = "Kinect")
 
@@ -760,18 +672,43 @@ public:
 
 
 	UFUNCTION(BlueprintCallable, Category = "Kinect")
+
+		/**********************************************************************************************//**
+		 * Starts a sensor.
+		 *
+		 * @author	Leon Rosengarten
+		 * @date	26-13-2015
+		 **************************************************************************************************/
+
 		static void StartSensor();
 
 	UFUNCTION(BlueprintCallable, Category = "Kinect")
+
+		/**********************************************************************************************//**
+		 * Shutdown sensor.
+		 *
+		 * @author	Leon Rosengarten
+		 * @date	26-13-2015
+		 **************************************************************************************************/
+
 		static void ShutdownSensor();
 		
 
+	UFUNCTION(BlueprintCallable, Category = "Kinect|Filters")
 
-	static FKinectV2InputDevice* GetKinectInputDevice();
+		/**********************************************************************************************//**
+		 * Gets smoothed joint.
+		 *
+		 * @author	Leon
+		 * @date	26-Aug-15
+		 *
+		 * @param [in,out]	InFilter	A filter specifying the in.
+		 * @param	InBody				The in body.
+		 *
+		 * @return	The smoothed joint.
+		 **************************************************************************************************/
 
-private:
-
-	
+		static FBody GetSmoothedJoint(UPARAM(ref) FBoneOrientationDoubleExponentialFilter& InFilter, const FBody& InBody);
 
 private:
 
@@ -780,18 +717,6 @@ private:
 	static FEnableBodyJoystick EnableBodyJoystickEvent; ///< The enable body joystick event
 
 	static FMapBodyCoordToScreenCoord MapBodyCoordToScreenCoordEvent;   ///< The map body coordinate to screen coordinate event
-
-	static FOneEuroFilterSetEnableEvent OneEuroFilterSetEnableEvent;	///< The one euro filter set enable event
-
-	static FOneEuroFilterSetFreqEvent OneEuroFilterSetFreqEvent;	///< The one euro filter set frequency event
-
-	static FOneEuroFilterSetMinCutoffEvent OneEuroFilterSetMinCutoffEvent;  ///< The one euro filter set minimum cutoff event
-
-	static FOneEuroFilterSetBetaEvent OneEuroFilterSetBetaEvent;	///< The one euro filter set beta event
-
-	static FOneEuroFilterSetDCutOffEvent OneEuroFilterSetDCutOffEvent;  ///< The one euro filter set d cut off event
-
-	static FOneEuroFilterSetFilterParamsEvent OneEuroFilterSetFilterParamsEvent;	///< A variable-length parameters list containing one euro filter set filter parameters event
 
 	static FGetKinectManegerEvent GetKinectManagerEvent;	///< The get kinect manager event
 
