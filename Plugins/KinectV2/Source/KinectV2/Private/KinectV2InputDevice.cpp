@@ -127,6 +127,7 @@ FKinectV2InputDevice::FKinectV2InputDevice(const TSharedRef< FGenericApplication
 	UKinectFunctionLibrary::StartSensorEvent.BindRaw(KinectSensor.Get(), &FKinectSensor::StartSensor);
 	UKinectFunctionLibrary::ShutdownSensorEvent.BindRaw(KinectSensor.Get(), &FKinectSensor::ShutDownSensor);
 	UKinectFunctionLibrary::MapBodyCoordToScreenCoordEvent.BindRaw(KinectSensor.Get(), &FKinectSensor::BodyToScreen);
+	UKinectFunctionLibrary::MapColorFrameToDepthSpaceEvent.BindRaw(KinectSensor.Get(), &FKinectSensor::MapColorFrameToDepthSpace);
 
 	UClass* temp = UKinectEventManager::StaticClass();
 
@@ -249,7 +250,6 @@ bool FKinectV2InputDevice::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice
 
 	if (FParse::Command(&Cmd, TEXT("kinect")))
 	{
-
 		if (FParse::Command(&Cmd, TEXT("on")) || FParse::Command(&Cmd, TEXT("1")))
 		{
 			KinectSensor->StartSensor();

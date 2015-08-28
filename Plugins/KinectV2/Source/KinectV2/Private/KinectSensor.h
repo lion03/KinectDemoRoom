@@ -149,6 +149,25 @@ public:
 
 	virtual FVector2D BodyToScreen(const FVector& bodyPoint, int32 width, int32 height);
 
+	/**********************************************************************************************//**
+	 * Map color frame to depth space.
+	 *
+	 * @author	Leon Rosengarten
+	 * @date	27-17-2015
+	 *
+	 * @param [in,out]	DepthSpacePoints	The depth space points.
+	 **************************************************************************************************/
+
+	void MapColorFrameToDepthSpace(TArray<FVector2D> &DepthSpacePoints);
+
+	/**********************************************************************************************//**
+	 * Query if this object is running.
+	 *
+	 * @author	Leon Rosengarten
+	 * @date	27-16-2015
+	 *
+	 * @return	true if running, false if not.
+	 **************************************************************************************************/
 
 	bool IsRunning();
 
@@ -239,6 +258,8 @@ private:
 	 **************************************************************************************************/
 
 	void UpdateTexture(UTexture2D* pTexture, const RGBQUAD* pData, uint32 SizeX, uint32 SizeY);
+
+
 
 private:
 
@@ -337,6 +358,9 @@ private:
 
 	BYTE					m_ucBodyIndexFrame[cInfraredWidth*cInfraredHeight];
 
+	uint16*                 m_usRawDepthBuffer;
+
+	TArray<FVector2D>		DepthSpacePointArray;
 
 };
 

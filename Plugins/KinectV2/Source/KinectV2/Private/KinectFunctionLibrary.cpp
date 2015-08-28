@@ -20,6 +20,7 @@ FGetKinectManegerEvent UKinectFunctionLibrary::GetKinectManagerEvent;
 FGetKinectInputDevice UKinectFunctionLibrary::GetKinectInputDeviceEvent;
 FStartSensorEvent UKinectFunctionLibrary::StartSensorEvent;
 FShutdownSensorEvent UKinectFunctionLibrary::ShutdownSensorEvent;
+FMapColorFrameToDepthSpace UKinectFunctionLibrary::MapColorFrameToDepthSpaceEvent;
 
 #pragma endregion
 
@@ -113,16 +114,16 @@ FBody::FBody(IBody* pBody){
 	for (size_t i = 0; i < NumOfKinectBones; i++) //first pass build global skeleton relations 
 	{
 		KinectBones[i] = FKinectBone(nJointOrientation[i], nJoints[i]);
-		
+
 	}
 
 	for (auto Bone : KinectBones)
 	{
-		
+
 		if (Bone.JointTypeEnd != EJoint::JointType_SpineBase)
 			KinectBones[Bone.JointTypeStart].Children.AddUnique(Bone.JointTypeEnd);
 
-		if (Bone.JointTypeEnd == EJoint::JointType_SpineBase 
+		if (Bone.JointTypeEnd == EJoint::JointType_SpineBase
 			|| Bone.JointTypeEnd == EJoint::JointType_HandTipLeft
 			|| Bone.JointTypeEnd == EJoint::JointType_HandTipRight
 			|| Bone.JointTypeEnd == EJoint::JointType_Head
@@ -130,7 +131,7 @@ FBody::FBody(IBody* pBody){
 			|| Bone.JointTypeEnd == EJoint::JointType_FootRight)
 			continue;
 
-		
+
 
 		FRotationMatrix R(Bone.JointTransform.GetRotation().Rotator());
 
@@ -147,7 +148,7 @@ FBody::FBody(IBody* pBody){
 	PointF tempLean;
 	pBody->get_Lean(&tempLean);
 
-	Lean = FVector(tempLean.X, tempLean.Y,0);
+	Lean = FVector(tempLean.X, tempLean.Y, 0);
 
 	LeftHandState = (EHandState::Type)nLeftHandState;
 	RightHandState = (EHandState::Type)nRightHandState;
@@ -167,7 +168,7 @@ FBody::FBody() :bIsTracked(false){
 FBodyFrame::FBodyFrame(){
 
 	Bodies.AddZeroed(BODY_COUNT);
-	
+
 }
 
 FBodyFrame::FBodyFrame(const FBodyFrame& bodyFrame){
@@ -199,7 +200,7 @@ FBodyFrame& FBodyFrame::operator=(const FBodyFrame& OtherBodyFrame)
 	{
 		Bodies.AddZeroed(BODY_COUNT);
 	}
-	
+
 	for (auto i = 0; i < BODY_COUNT; ++i){
 		this->Bodies[i] = OtherBodyFrame.Bodies[i];
 	}
@@ -265,7 +266,7 @@ FKinectBone::FKinectBone(){}
 FKinectBone::FKinectBone(const JointOrientation& jointOrientation, const Joint& joint)
 {
 
-	
+
 	JointTypeStart = UKinectFunctionLibrary::BoneMap[(EJoint::Type)joint.JointType];
 	JointTypeEnd = (EJoint::Type)joint.JointType;
 
@@ -308,7 +309,7 @@ FKinectBone& FKinectBone::operator=(const FKinectBone& Other)
 
 	this->CameraSpacePoint = Other.CameraSpacePoint;
 
-	this->Orientation = Other.Orientation; 
+	this->Orientation = Other.Orientation;
 
 	this->JointTransform = Other.JointTransform;
 
@@ -346,7 +347,7 @@ void UKinectFunctionLibrary::BreakBodyFrame(const FBodyFrame& InBodyFrame, TArra
 void UKinectFunctionLibrary::BreakBody(const FBody& InBody, TArray<FTransform> &BoneTransforms, bool &IsTracked){
 	IsTracked = InBody.bIsTracked;
 
-	for (size_t i = 0; i <InBody.KinectBones.Num(); i++)
+	for (size_t i = 0; i < InBody.KinectBones.Num(); i++)
 		BoneTransforms.Push(FTransform(InBody.KinectBones[i].JointTransform));
 
 }
@@ -448,7 +449,7 @@ TEnumAsByte<EJoint::Type> UKinectFunctionLibrary::GetBoneParent(const TEnumAsByt
 	{
 		return BoneMap[InBone];
 	}
-	
+
 	return TEnumAsByte<EJoint::Type>(EJoint::JointType_Count);
 }
 
@@ -509,7 +510,7 @@ UKinectEventManager* UKinectFunctionLibrary::GetKinectEventManager()
 	{
 		return GetKinectManagerEvent.Execute();
 	}
-	
+
 	return nullptr;
 }
 
@@ -537,6 +538,95 @@ FBody UKinectFunctionLibrary::GetSmoothedJoint(struct FBoneOrientationDoubleExpo
 
 	return InFilter.UpdateFilter(InBody);
 
+}
+
+
+UTexture2D* UKinectFunctionLibrary::MapColorFrameToDepthSpace(UTexture2D* InTexture, UTexture2D* DepthTexture)
+{
+
+
+
+	if ((!InTexture || InTexture->GetSizeX() != 1920 || InTexture->GetSizeY() != 1080) ||
+		(!DepthTexture || DepthTexture->GetSizeX() != 1920 || DepthTexture->GetSizeY() != 1080) ||
+		DepthTexture->GetPixelFormat() != PF_G16R16F)
+	{
+		return DepthTexture;
+	}
+
+
+	
+	
+	if (MapColorFrameToDepthSpaceEvent.IsBound())
+	{
+		TArray<FVector2D> RetArray;
+		RetArray.AddZeroed(1080 * 1920);
+
+		MapColorFrameToDepthSpaceEvent.Execute(RetArray);
+
+		FVector2D* Dest = (FVector2D*)DepthTexture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+		//FColor* Src = (FColor*)InTexture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_ONLY);
+
+		for (int32 i = 0; i < 1920 * 1080; ++i)
+		{
+
+
+			FVector2D* Point = Dest + i;
+
+			if (FMath::IsFinite(RetArray[i].X) && FMath::IsFinite(RetArray[i].Y))
+			{
+
+				int depthX = static_cast<int>(RetArray[i].X + 0.5f);
+				int depthY = static_cast<int>(RetArray[i].Y + 0.5f);
+
+				if ((depthX >= 0 && depthX < 512) && (depthY >= 0 && depthY < 424))
+				{
+					*Point = FVector2D(depthX / 512, depthY / 424);
+				}
+				else
+				{
+					*Point = FVector2D(-1, -1);
+				}
+
+			}
+			else
+			{
+				*Point = FVector2D(-1, -1);
+			}
+
+
+
+		}
+
+
+		DepthTexture->PlatformData->Mips[0].BulkData.Unlock();
+
+		DepthTexture->UpdateResource();
+
+
+
+	}
+	
+	return DepthTexture;
+
+}
+
+
+UTexture2D* UKinectFunctionLibrary::CreateStreamTexture(EKinectStreamType StreamType)
+{
+	switch (StreamType)
+	{
+	case EKinectStreamType::KST_BodyIndex:
+	case EKinectStreamType::KST_Depth:
+	case EKinectStreamType::KST_IR:
+		return UTexture2D::CreateTransient(512, 424);
+		break;
+	case EKinectStreamType::KST_Color:
+		return UTexture2D::CreateTransient(1920, 1080,PF_G16R16F);
+	default:
+		return nullptr;
+		break;
+
+	}
 }
 
 TArray<FTransform> UKinectFunctionLibrary::MirrorKinectSkeleton(const FBody& BodyToMirror, float JointPosScale /*= 1.f*/)

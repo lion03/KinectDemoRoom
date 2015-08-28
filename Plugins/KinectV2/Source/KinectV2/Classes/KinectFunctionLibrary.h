@@ -74,6 +74,14 @@ namespace EHandState {
 
 }
 
+UENUM()
+enum class EKinectStreamType : uint8
+{
+	KST_Color UMETA(DisplayName = "Color Stream"),
+	KST_Depth UMETA(DisplayName = "Depth Stream"),
+	KST_IR UMETA(DisplayName = "IR Stream"),
+	KST_BodyIndex UMETA(DisplayName = "Body Index Stream"),
+};
 
 USTRUCT(BlueprintType)
 struct KINECTV2_API FKinectBone
@@ -250,18 +258,6 @@ DECLARE_DELEGATE_OneParam(FEnableBodyJoystick, const bool&);
 
 DECLARE_DELEGATE_RetVal_ThreeParams(FVector2D, FMapBodyCoordToScreenCoord, const FVector&, int32, int32);
 
-DECLARE_DELEGATE_OneParam(FOneEuroFilterSetEnableEvent, bool);
-
-DECLARE_DELEGATE_OneParam(FOneEuroFilterSetFreqEvent, float);
-
-DECLARE_DELEGATE_OneParam(FOneEuroFilterSetMinCutoffEvent, float);
-
-DECLARE_DELEGATE_OneParam(FOneEuroFilterSetBetaEvent, float);
-
-DECLARE_DELEGATE_OneParam(FOneEuroFilterSetDCutOffEvent, float);
-
-DECLARE_DELEGATE_FourParams(FOneEuroFilterSetFilterParamsEvent, float, float, float, float);
-
 DECLARE_DELEGATE_RetVal(class UKinectEventManager*, FGetKinectManegerEvent);
 
 DECLARE_DELEGATE_RetVal(class FKinectV2InputDevice*, FGetKinectInputDevice);
@@ -269,6 +265,8 @@ DECLARE_DELEGATE_RetVal(class FKinectV2InputDevice*, FGetKinectInputDevice);
 DECLARE_DELEGATE(FStartSensorEvent);
 
 DECLARE_DELEGATE(FShutdownSensorEvent);
+
+DECLARE_DELEGATE_OneParam(FMapColorFrameToDepthSpace, TArray<FVector2D>&);
 
 #pragma endregion
 
@@ -693,7 +691,7 @@ public:
 
 		static void ShutdownSensor();
 		
-
+	
 	UFUNCTION(BlueprintCallable, Category = "Kinect|Filters")
 
 		/**********************************************************************************************//**
@@ -710,6 +708,14 @@ public:
 
 		static FBody GetSmoothedJoint(UPARAM(ref) FBoneOrientationDoubleExponentialFilter& InFilter, const FBody& InBody);
 
+
+	UFUNCTION(BlueprintCallable, Category = "Kinect")
+		static class UTexture2D* CreateStreamTexture(EKinectStreamType StreamType);
+
+	UFUNCTION(BlueprintCallable, Category = "Kinect")
+		static UTexture2D* MapColorFrameToDepthSpace(UPARAM(ref) UTexture2D* InTexture, UPARAM(ref) UTexture2D* DepthTexture);
+
+
 private:
 
 	friend class FKinectV2InputDevice;
@@ -725,6 +731,8 @@ private:
 	static FStartSensorEvent StartSensorEvent;
 
 	static FShutdownSensorEvent ShutdownSensorEvent;
+
+	static FMapColorFrameToDepthSpace MapColorFrameToDepthSpaceEvent;
 
 	/**************************************************************************************************
 	 * \property	static TMap&lt;TEnumAsByte&lt;EJoint::Type&gt;, TEnumAsByte&lt;EJoint::Type&gt;&gt;

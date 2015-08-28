@@ -190,6 +190,7 @@ m_pColorFrameRGBX(nullptr),
 m_pInfraredFrameRGBX(nullptr),
 m_pDepthFrameRGBX(nullptr),
 m_pBodyIndexFrameRGBX(nullptr),
+m_usRawDepthBuffer(nullptr),
 pKinectThread(nullptr)
 
 {
@@ -198,6 +199,10 @@ pKinectThread(nullptr)
 	m_pDepthFrameRGBX = new RGBQUAD[cInfraredWidth*cInfraredHeight];
 	m_pInfraredFrameRGBX = new RGBQUAD[cInfraredWidth*cInfraredHeight];
 	m_pBodyIndexFrameRGBX = new RGBQUAD[cInfraredWidth*cInfraredHeight];
+	m_usRawDepthBuffer = new uint16[cInfraredWidth*cInfraredHeight];
+
+	DepthSpacePointArray.AddZeroed(cColorWidth*cColorHeight);
+
 }
 
 
@@ -206,6 +211,8 @@ FKinectSensor:: ~FKinectSensor(){
 
 
 	//SAFE_RELEASE(m_pKinectSensor);
+
+	DepthSpacePointArray.Empty();
 
 	if (m_pColorFrameRGBX)
 	{
@@ -225,6 +232,12 @@ FKinectSensor:: ~FKinectSensor(){
 	{
 		delete[] m_pBodyIndexFrameRGBX;
 		m_pBodyIndexFrameRGBX = nullptr;
+	}
+
+	if (m_usRawDepthBuffer)
+	{
+		delete[] m_usRawDepthBuffer;
+		m_usRawDepthBuffer = nullptr;
 	}
 
 }
@@ -621,16 +634,17 @@ void FKinectSensor::ProcessDepthFrame(IDepthFrameArrivedEventArgs*pArgs)
 			USHORT nDepthMinReliableDistance = 0;
 			USHORT nDepthMaxReliableDistance = 0;
 			const uint32 nBufferSize = cInfraredWidth*cInfraredHeight;
-			uint16 pBuffer[nBufferSize];
 
 			if (SUCCEEDED(pDepthFrame->get_DepthMaxReliableDistance(&nDepthMaxReliableDistance)) &&
-				SUCCEEDED(pDepthFrame->get_DepthMinReliableDistance(&nDepthMinReliableDistance)) &&
-				SUCCEEDED(pDepthFrame->CopyFrameDataToArray(nBufferSize, pBuffer))){
+				SUCCEEDED(pDepthFrame->get_DepthMinReliableDistance(&nDepthMinReliableDistance))
+				){
 
 				FScopeLock lock(&mDepthCriticalSection);
-				ConvertDepthData(pBuffer, m_pDepthFrameRGBX, nDepthMinReliableDistance, nDepthMaxReliableDistance);
+				if (SUCCEEDED(pDepthFrame->CopyFrameDataToArray(nBufferSize, m_usRawDepthBuffer))){
+					ConvertDepthData(m_usRawDepthBuffer, m_pDepthFrameRGBX, nDepthMinReliableDistance, nDepthMaxReliableDistance);
 
-				m_bNewDepthFrame = true;
+					m_bNewDepthFrame = true;
+				}
 			}
 
 		}
@@ -775,6 +789,17 @@ void FKinectSensor::UpdateTexture(UTexture2D*pTexture, const RGBQUAD*pData, uint
 }
 
 
+void FKinectSensor::MapColorFrameToDepthSpace(TArray<FVector2D> &DepthSpacePoints)
+{
+	if (DepthSpacePoints.Num() == cColorWidth*cColorHeight)
+	{
+		FScopeLock Lock(&mDepthCriticalSection);
+
+		DepthSpacePoints = DepthSpacePointArray;
+
+	}
+}
+
 /**********************************************************************************************//**
  * Convert depth data.
  *
@@ -789,6 +814,12 @@ void FKinectSensor::ConvertDepthData(uint16*pDepthBuffer, RGBQUAD*pDepthRGBX, US
 {
 	if (pDepthRGBX && pDepthBuffer)
 	{
+
+
+		m_pCoordinateMapper->MapColorFrameToDepthSpace(cInfraredWidth*cInfraredHeight, m_usRawDepthBuffer,
+													   cColorWidth*cColorHeight,
+													   (DepthSpacePoint*)&DepthSpacePointArray[0]);
+
 		RGBQUAD* pRGBX = pDepthRGBX;
 
 		// end pixel is start + width*height - 1
