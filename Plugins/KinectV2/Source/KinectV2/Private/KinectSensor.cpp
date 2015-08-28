@@ -54,6 +54,102 @@ return Kinect;
 
 static uint32 ThreadNameWorkaround = 0;
 
+void CALLBACK BodyFrameCallback(PVOID pContext, BOOLEAN b)
+{
+
+	FKinectSensor* pSensor = nullptr;
+
+	pSensor = static_cast<FKinectSensor*>(pContext);
+
+	if (pSensor){
+		TComPtr<IBodyFrameArrivedEventArgs> pArgs = nullptr;
+		HRESULT hr = pSensor->m_pBodyFrameReader->GetFrameArrivedEventData(pSensor->BodyEventHandle, &pArgs);
+		if (SUCCEEDED(hr)){
+			pSensor->ProcessBodyFrame(pArgs);
+		}
+		pArgs.Reset();
+	}
+
+}
+
+
+void CALLBACK ColorFrameCallback(PVOID pContext, BOOLEAN b)
+{
+
+	FKinectSensor* pSensor = nullptr;
+
+	pSensor = static_cast<FKinectSensor*>(pContext);
+
+	if (pSensor)
+	{
+		TComPtr<IColorFrameArrivedEventArgs> pArgs = nullptr;
+		HRESULT hr = pSensor->m_pColorFrameReader->GetFrameArrivedEventData(pSensor->ColorEventHandle, &pArgs);
+		if (SUCCEEDED(hr)){
+			pSensor->ProcessColorFrame(pArgs);
+		}
+		pArgs.Reset();
+	}
+
+}
+
+void CALLBACK DepthFrameCallback(PVOID pContext, BOOLEAN b)
+{
+
+	FKinectSensor* pSensor = nullptr;
+
+	pSensor = static_cast<FKinectSensor*>(pContext);
+
+	if (pSensor)
+	{
+		TComPtr<IDepthFrameArrivedEventArgs> pArgs = nullptr;
+		HRESULT hr = pSensor->m_pDepthFrameReader->GetFrameArrivedEventData(pSensor->DepthEventHandle, &pArgs);
+		if (SUCCEEDED(hr)){
+			pSensor->ProcessDepthFrame(pArgs);
+		}
+		pArgs.Reset();
+	}
+
+}
+
+void CALLBACK InfraredFrameCallback(PVOID pContext, BOOLEAN b)
+{
+
+	FKinectSensor* pSensor = nullptr;
+
+	pSensor = static_cast<FKinectSensor*>(pContext);
+
+	if (pSensor)
+	{
+		TComPtr<IInfraredFrameArrivedEventArgs> pArgs = nullptr;
+		HRESULT hr = pSensor->m_pInfraredFrameReader->GetFrameArrivedEventData(pSensor->InfraredEventHandle, &pArgs);
+		if (SUCCEEDED(hr)){
+			pSensor->ProcessInfraredFrame(pArgs);
+		}
+		pArgs.Reset();
+	}
+
+}
+
+void CALLBACK BodyIndexFrameCallback(PVOID pContext, BOOLEAN b)
+{
+
+	FKinectSensor* pSensor = nullptr;
+
+	pSensor = static_cast<FKinectSensor*>(pContext);
+
+	if (pSensor)
+	{
+		TComPtr<IBodyIndexFrameArrivedEventArgs> pArgs = nullptr;
+
+		HRESULT hr = pSensor->m_pBodyIndexFrameReader->GetFrameArrivedEventData(pSensor->BodyIndexEventHandle, &pArgs);
+
+		if (SUCCEEDED(hr)){
+			pSensor->ProcessBodyIndex(pArgs);
+		}
+		pArgs.Reset();
+	}
+
+}
 uint32 FKinectSensor::Run(){
 
 
@@ -63,7 +159,7 @@ uint32 FKinectSensor::Run(){
 
 		HRESULT hr;
 		HANDLE handles[] = {	//Do not change the order of this array! if you do the switch below will redirect events to the wrong handler!
-			reinterpret_cast<HANDLE>(BodyEventHandle),
+			//	reinterpret_cast<HANDLE>(BodyEventHandle),
 			reinterpret_cast<HANDLE>(ColorEventHandle),
 			reinterpret_cast<HANDLE>(InfraredEventHandle),
 			reinterpret_cast<HANDLE>(DepthEventHandle),
@@ -75,64 +171,44 @@ uint32 FKinectSensor::Run(){
 		};
 
 
-		switch (WaitForMultipleObjects(!GIsEditor ? _countof(handles) : _countof(handles) - 3, handles, false, 0))
+		switch (WaitForMultipleObjects(_countof(handles), handles, false, 0) + 1)
 		{
+			/*
 		case BODY_WAIT_OBJECT:
 		{
-			TComPtr<IBodyFrameArrivedEventArgs> pArgs = nullptr;
-			hr = m_pBodyFrameReader->GetFrameArrivedEventData(BodyEventHandle, &pArgs);
-			if (SUCCEEDED(hr)){
-				ProcessBodyFrame(pArgs);
-			}
-			pArgs.Reset();
-			//SAFE_RELEASE(pArgs);
+		TComPtr<IBodyFrameArrivedEventArgs> pArgs = nullptr;
+		hr = m_pBodyFrameReader->GetFrameArrivedEventData(BodyEventHandle, &pArgs);
+		if (SUCCEEDED(hr)){
+		ProcessBodyFrame(pArgs);
+		}
+		pArgs.Reset();
+		//SAFE_RELEASE(pArgs);
 
 		}
 		break;
+		*/
 		case COLOR_WAIT_OBJECT:
 		{
-			TComPtr<IColorFrameArrivedEventArgs> pArgs = nullptr;
-			hr = m_pColorFrameReader->GetFrameArrivedEventData(ColorEventHandle, &pArgs);
-			if (SUCCEEDED(hr)){
-				ProcessColorFrame(pArgs);
-			}
-			pArgs.Reset();
+
 			//SAFE_RELEASE(pArgs);
 		}
 		break;
 		case INFRARED_WAIT_OBJECT:
 		{
-			TComPtr<IInfraredFrameArrivedEventArgs> pArgs = nullptr;
-			hr = m_pInfraredFrameReader->GetFrameArrivedEventData(InfraredEventHandle, &pArgs);
-			if (SUCCEEDED(hr)){
-				ProcessInfraredFrame(pArgs);
-			}
-			pArgs.Reset();
+
 			//SAFE_RELEASE(pArgs);
 		}
 		break;
 		case DEPTH_WAIT_OBJECT:
 		{
-			TComPtr<IDepthFrameArrivedEventArgs> pArgs = nullptr;
-			hr = m_pDepthFrameReader->GetFrameArrivedEventData(DepthEventHandle, &pArgs);
-			if (SUCCEEDED(hr)){
-				ProcessDepthFrame(pArgs);
-			}
-			pArgs.Reset();
+
 			//SAFE_RELEASE(pArgs);
 		}
 		break;
 		case BODYINDEX_WAIT_OBJECT:
 		{
 
-			TComPtr<IBodyIndexFrameArrivedEventArgs> pArgs = nullptr;
 
-			hr = m_pBodyIndexFrameReader->GetFrameArrivedEventData(BodyIndexEventHandle, &pArgs);
-
-			if (SUCCEEDED(hr)){
-				ProcessBodyIndex(pArgs);
-			}
-			pArgs.Reset();
 			//SAFE_RELEASE(pArgs);
 		}
 		break;
@@ -191,8 +267,12 @@ m_pInfraredFrameRGBX(nullptr),
 m_pDepthFrameRGBX(nullptr),
 m_pBodyIndexFrameRGBX(nullptr),
 m_usRawDepthBuffer(nullptr),
-pKinectThread(nullptr)
-
+pKinectThread(nullptr),
+BodyWaitHandle(INVALID_HANDLE_VALUE),
+ColorWaitHandle(INVALID_HANDLE_VALUE),
+DepthWaitHandle(INVALID_HANDLE_VALUE),
+InfraredWaitHandle(INVALID_HANDLE_VALUE),
+BodyIndexWaitHandle(INVALID_HANDLE_VALUE)
 {
 
 	m_pColorFrameRGBX = new RGBQUAD[cColorWidth * cColorHeight];
@@ -277,7 +357,7 @@ bool FKinectSensor::Init(){
 	{
 
 		hr = m_pKinectSensor->get_BodyIndexFrameSource(&pBodyIndexFrameSource);
-	
+
 	}
 	if (SUCCEEDED(hr)){
 
@@ -382,27 +462,54 @@ void FKinectSensor::Stop(){
 
 void FKinectSensor::StartSensor()
 {
+	Init();
+
+	RegisterWaitForSingleObject(&BodyWaitHandle, reinterpret_cast<HANDLE>(BodyEventHandle), BodyFrameCallback, this, INFINITE, WT_EXECUTEDEFAULT);
+	RegisterWaitForSingleObject(&ColorWaitHandle, reinterpret_cast<HANDLE>(ColorEventHandle), ColorFrameCallback, this, INFINITE, WT_EXECUTEDEFAULT);
+	RegisterWaitForSingleObject(&DepthWaitHandle, reinterpret_cast<HANDLE>(DepthEventHandle), DepthFrameCallback, this, INFINITE, WT_EXECUTEDEFAULT);
+	RegisterWaitForSingleObject(&InfraredWaitHandle, reinterpret_cast<HANDLE>(InfraredEventHandle), InfraredFrameCallback, this, INFINITE, WT_EXECUTEDEFAULT);
+	RegisterWaitForSingleObject(&BodyIndexWaitHandle, reinterpret_cast<HANDLE>(BodyIndexEventHandle), BodyIndexFrameCallback, this, INFINITE, WT_EXECUTEDEFAULT);
+	/*
 	if (!pKinectThread)
 	{
 
-		pKinectThread = FRunnableThread::Create(this, *(FString::Printf(TEXT("FKinectThread%ul"), ThreadNameWorkaround++)), 0, EThreadPriority::TPri_AboveNormal);
+	pKinectThread = FRunnableThread::Create(this, *(FString::Printf(TEXT("FKinectThread%ul"), ThreadNameWorkaround++)), 0, EThreadPriority::TPri_AboveNormal);
 
 	}
+	*/
 }
 
 
 void FKinectSensor::ShutDownSensor()
 {
 
+	UnregisterWait(BodyWaitHandle);
+	BodyWaitHandle = INVALID_HANDLE_VALUE;
+
+	UnregisterWait(ColorWaitHandle);
+	ColorWaitHandle = INVALID_HANDLE_VALUE;
+
+	UnregisterWait(DepthWaitHandle);
+	DepthWaitHandle = INVALID_HANDLE_VALUE;
+
+	UnregisterWait(InfraredWaitHandle);
+	InfraredWaitHandle = INVALID_HANDLE_VALUE;
+
+	UnregisterWait(BodyIndexWaitHandle);
+	BodyIndexWaitHandle = INVALID_HANDLE_VALUE;
+
+	Exit();
+
+	/*
 	if (pKinectThread) {
 
-		pKinectThread->Kill(true);
-		
-		delete pKinectThread;
+	pKinectThread->Kill(true);
 
-		pKinectThread = nullptr;
+	delete pKinectThread;
+
+	pKinectThread = nullptr;
 	}
-
+	*/
 }
 
 void FKinectSensor::Exit()
@@ -527,8 +634,8 @@ void FKinectSensor::ProcessBodyFrame(IBodyFrameArrivedEventArgs*pArgs)
 
 		}
 		SAFE_RELEASE(pBodyFrameReferance);
+		}
 	}
-}
 #ifdef DEBUG
 #pragma optimize("",on)
 #endif // DEBUG
@@ -555,8 +662,10 @@ void FKinectSensor::ProcessColorFrame(IColorFrameArrivedEventArgs*pArgs)
 			pColorBuffer = m_pColorFrameRGBX;
 			uint32 nColorBufferSize = cColorWidth * cColorHeight * sizeof(RGBQUAD);
 			{
-				FScopeLock lock(&mColorCriticalSection);
-				hr = pColorFrame->CopyConvertedFrameDataToArray(nColorBufferSize, reinterpret_cast<BYTE*>(pColorBuffer), ColorImageFormat_Bgra);
+				{
+					FScopeLock lock(&mColorCriticalSection);
+					hr = pColorFrame->CopyConvertedFrameDataToArray(nColorBufferSize, reinterpret_cast<BYTE*>(pColorBuffer), ColorImageFormat_Bgra);
+				}
 				m_bNewColorFrame = true;
 			}
 		}
@@ -584,7 +693,7 @@ void FKinectSensor::ProcessInfraredFrame(IInfraredFrameArrivedEventArgs*pArgs)
 	HRESULT hr = pArgs->get_FrameReference(&pInfraredFrameReferance);
 
 	if (SUCCEEDED(hr)){
-		
+
 		TComPtr<IInfraredFrame> pInfraredFrame = nullptr;
 
 		if (SUCCEEDED(pInfraredFrameReferance->AcquireFrame(&pInfraredFrame))){
@@ -666,7 +775,7 @@ void FKinectSensor::ProcessDepthFrame(IDepthFrameArrivedEventArgs*pArgs)
 void FKinectSensor::UpdateColorTexture(UTexture2D*pTexture)
 {
 	SCOPE_CYCLE_COUNTER(STAT_KINECT_SENSOR_ColorUpdateTime);
-	
+
 	if (m_bNewColorFrame)
 	{
 		FScopeLock lock(&mColorCriticalSection);
@@ -687,7 +796,7 @@ void FKinectSensor::UpdateColorTexture(UTexture2D*pTexture)
 void FKinectSensor::UpdateInfraredTexture(UTexture2D*pTexture)
 {
 	SCOPE_CYCLE_COUNTER(STAT_KINECT_SENSOR_InfraredUpdateTime);
-	
+
 	if (m_bNewInfraredFrame)
 	{
 		FScopeLock lock(&mInfraredCriticalSection);
@@ -708,7 +817,7 @@ void FKinectSensor::UpdateInfraredTexture(UTexture2D*pTexture)
 void FKinectSensor::UpdateDepthFrameTexture(UTexture2D*pTexture)
 {
 	SCOPE_CYCLE_COUNTER(STAT_KINECT_SENSOR_DepthUpdateTime);
-	
+
 	if (m_bNewDepthFrame)
 	{
 		FScopeLock lock(&mDepthCriticalSection);
@@ -817,8 +926,8 @@ void FKinectSensor::ConvertDepthData(uint16*pDepthBuffer, RGBQUAD*pDepthRGBX, US
 
 
 		m_pCoordinateMapper->MapColorFrameToDepthSpace(cInfraredWidth*cInfraredHeight, m_usRawDepthBuffer,
-													   cColorWidth*cColorHeight,
-													   (DepthSpacePoint*)&DepthSpacePointArray[0]);
+			cColorWidth*cColorHeight,
+			(DepthSpacePoint*)&DepthSpacePointArray[0]);
 
 		RGBQUAD* pRGBX = pDepthRGBX;
 
@@ -922,7 +1031,7 @@ void FKinectSensor::ConvertBodyIndexData(const TArray<uint8> BodyIndexBufferData
 				pRGBX->rgbBlue = (LUTColor & 0x0000ff00) >> 8;
 				pRGBX->rgbGreen = (LUTColor & 0x00ff0000) >> 16;
 				pRGBX->rgbRed = (LUTColor & 0xff000000) >> 24;
-			
+
 			}
 			else
 			{
@@ -938,11 +1047,11 @@ void FKinectSensor::ConvertBodyIndexData(const TArray<uint8> BodyIndexBufferData
 void FKinectSensor::UpdateBodyIndexTexture(UTexture2D* pTexture)
 {
 	SCOPE_CYCLE_COUNTER(STAT_KINECT_SENSOR_BodyIndexUpdateTime);
-	
+
 	if (m_bNewBodyIndexFrame)
 	{
 		FScopeLock lock(&mDepthCriticalSection);
 		UpdateTexture(pTexture, m_pBodyIndexFrameRGBX, 512, 424);
-		m_bNewBodyIndexFrame = false; 
+		m_bNewBodyIndexFrame = false;
 	}
 }

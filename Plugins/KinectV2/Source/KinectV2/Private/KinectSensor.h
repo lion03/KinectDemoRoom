@@ -34,6 +34,12 @@ public:
 
 	friend class UVisualGestureDetector;
 
+	friend void CALLBACK BodyFrameCallback(PVOID pContext, BOOLEAN b);
+
+	friend void CALLBACK ColorFrameCallback(PVOID pContext, BOOLEAN b);
+	friend void CALLBACK DepthFrameCallback(PVOID pContext, BOOLEAN b);
+	friend void CALLBACK InfraredFrameCallback(PVOID pContext, BOOLEAN b);
+	friend void CALLBACK BodyIndexFrameCallback(PVOID pContext, BOOLEAN b);
 	/**********************************************************************************************//**
 	 * Gets the get.
 	 *
@@ -304,6 +310,15 @@ private:
 
 private:
 
+	HANDLE					BodyWaitHandle;
+
+	HANDLE					ColorWaitHandle;
+
+	HANDLE					DepthWaitHandle;
+
+	HANDLE					InfraredWaitHandle;
+
+	HANDLE					BodyIndexWaitHandle;
 
 	WAITABLE_HANDLE			BodyEventHandle;	///< Handle of the body event
 
