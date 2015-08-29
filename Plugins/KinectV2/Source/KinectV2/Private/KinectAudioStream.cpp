@@ -9,9 +9,9 @@
 // </summary>
 //------------------------------------------------------------------------------
 
-#include "stdafx.h"
+#include "IKinectV2PluginPCH.h"
 #include "KinectAudioStream.h"
-
+#include "AllowWindowsPlatformTypes.h"
 #include <stdio.h>
 
 /// <summary>
@@ -170,3 +170,5 @@ STDMETHODIMP KinectAudioStream::Clone(__RPC__deref_out_opt IStream **)
 {
     return E_NOTIMPL;
 }
+
+#include "HideWindowsPlatformTypes.h"

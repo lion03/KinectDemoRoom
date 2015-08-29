@@ -7,6 +7,9 @@
 #include "IKinectV2PluginPCH.h"
 #include "ImageUtils.h"
 #include "KinectSensor.h"
+
+#include "KinectAudioStream.h"
+
 #include "AllowWindowsPlatformTypes.h"
 
 #define BODY_WAIT_OBJECT WAIT_OBJECT_0
@@ -365,6 +368,33 @@ bool FKinectSensor::Init(){
 
 		//m_pAudioBeamFrameReader->SubscribeFrameArrived(&AudioBeamEventHandle);
 
+
+	}
+	
+	TComPtr<IAudioSource> pAudioSource = nullptr;
+	TComPtr<IAudioBeamList> pAudioBeamList = nullptr;
+
+	if (SUCCEEDED(hr))
+	{
+		hr = m_pKinectSensor->get_AudioSource(&pAudioSource);
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		hr = pAudioSource->get_AudioBeams(&pAudioBeamList);
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		hr = pAudioBeamList->OpenAudioBeam(0, &m_pAudioBeam);
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		hr = m_pAudioBeam->OpenInputStream(&m_pAudioStream);
+
+		m_p16BitAudioStream = TSharedPtr<KinectAudioStream>( new KinectAudioStream(m_pAudioStream));
+
 		bStop = false;
 
 		return true;
@@ -437,6 +467,14 @@ void FKinectSensor::Exit()
 
 	m_pBodyIndexFrameReader.Reset();
 	//SAFE_RELEASE(m_pBodyIndexFrameReader);
+	
+	if (nullptr != m_p16BitAudioStream.Get())
+	{
+		m_p16BitAudioStream.Reset();
+	}
+
+	m_pAudioStream.Reset();
+	m_pAudioBeam.Reset();
 
 	// close the Kinect Sensor
 	if (m_pKinectSensor)

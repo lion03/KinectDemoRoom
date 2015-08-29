@@ -286,6 +286,12 @@ private:
 
 	TComPtr<IFaceFrameReader>		m_pFaceFrameReaders[BODY_COUNT];
 
+	TComPtr<IAudioBeam>				m_pAudioBeam;
+
+	TComPtr<struct IStream>			m_pAudioStream;
+
+	TSharedPtr<class KinectAudioStream> m_p16BitAudioStream;
+
 
 
 

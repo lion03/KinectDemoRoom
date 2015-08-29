@@ -9,6 +9,18 @@
 //------------------------------------------------------------------------------
 #pragma once
 
+#include "AllowWindowsPlatformTypes.h"
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+#endif
+
+// Windows Header Files
+#include <windows.h>
+
+#include <Shlobj.h>
+
+
 // For WAVEFORMATEX
 #include <mmreg.h>
 
@@ -85,3 +97,5 @@ private:
     IStream*                m_p32BitAudio;
     bool                    m_SpeechActive;
 };
+
+#include "HideWindowsPlatformTypes.h"
