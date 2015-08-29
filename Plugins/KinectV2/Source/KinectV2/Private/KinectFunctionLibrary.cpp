@@ -6,7 +6,6 @@
 
 #include "IKinectV2PluginPCH.h"
 #include "KinectV2Classes.h"
-#include "KinectPlayerController.h"
 #include "KinectV2InputDevice.h"
 
 
@@ -475,12 +474,6 @@ FRotator UKinectFunctionLibrary::ConvertRotatorToLocal(const FRotator& WorldRota
 	FMatrix RotMatrix(Forward, Right, Up, FVector::ZeroVector);
 
 	return RotMatrix.Rotator();
-}
-
-FTransform UKinectFunctionLibrary::MultiplyTransform(const FTransform& A, const FTransform& B){
-
-	return A*B;
-
 }
 
 

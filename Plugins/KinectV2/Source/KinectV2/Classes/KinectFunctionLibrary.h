@@ -285,7 +285,7 @@ public:
 	friend class UVisualGestureImporterFactory;
 
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect", meta = (NativeMakeFunc))
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect|Math", meta = (NativeMakeFunc))
 
 		/**************************************************************************************************
 		 * \fn	static FQuat UKinectFunctionLibrary::MakeQuat(float x, float y, float z, float w);
@@ -308,7 +308,7 @@ public:
 
 		 static FQuat MakeQuat(float x, float y, float z, float w);
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect", meta = (NativeBreakFunc))
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect|Math", meta = (NativeBreakFunc))
 
 		/**************************************************************************************************
 		 * \fn	static void UKinectFunctionLibrary::BreakQuat(const FQuat&amp; InQuat, float&amp; x,
@@ -330,7 +330,7 @@ public:
 
 		 static void BreakQuat(const FQuat& InQuat, float& x, float& y, float& z, float& w);
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * Convert quaternion to rotator.
@@ -343,7 +343,7 @@ public:
 
 		 static FRotator Conv_QuatToRotator(const FQuat& InQuat);
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static FQuat UKinectFunctionLibrary::Conv_Vector4ToQuat(const FVector4&amp; InVec);
@@ -362,7 +362,7 @@ public:
 
 		 static FQuat Conv_Vector4ToQuat(const FVector4& InVec);
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static FRotator UKinectFunctionLibrary::Vec4QuatToRotator(const FVector4&amp; TheVec);
@@ -381,7 +381,7 @@ public:
 
 		 static FRotator Vec4QuatToRotator(const FVector4& TheVec);
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static FQuat UKinectFunctionLibrary::RotatorToQuat(const FRotator&amp; TheRotator);
@@ -413,7 +413,7 @@ public:
 
 		 static void BreakBodyFrame(const FBodyFrame& InBodyFrame, TArray<FBody> &Bodies);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect", meta = (NativeBreakFunc))
+	UFUNCTION(BlueprintPure, Category = "Kinect|Body", meta = (NativeBreakFunc))
 
 		/**************************************************************************************************
 		 * Break vector 4.
@@ -429,7 +429,7 @@ public:
 
 		 static void BreakVector4(const FVector4& InVector, float& X, float& Y, float& Z, float& W);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect", meta = (NativeMakeFunc))
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math", meta = (NativeMakeFunc))
 
 		/**************************************************************************************************
 		 * Makes vector 4.
@@ -446,7 +446,7 @@ public:
 
 		 static FVector4 MakeVector4(const float& X, const float& Y, const float& Z, const float& W);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect", meta = (NativeBreakFunc))
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math", meta = (NativeBreakFunc))
 
 		/**************************************************************************************************
 		 * Break body.
@@ -460,7 +460,7 @@ public:
 
 		 static void BreakBody(const FBody& InBody, TArray<FTransform> &BoneTransforms, bool &IsTracked);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect", meta = (NativeBreakFunc))
+	UFUNCTION(BlueprintPure, Category = "Kinect|Body", meta = (NativeBreakFunc))
 
 		/**************************************************************************************************
 		 * Break kinect bone.
@@ -479,7 +479,7 @@ public:
 		 TEnumAsByte<EJoint::Type>& JointTypeEnd,
 		 FQuat& Orientation, FVector& CameraSpacePoint, TEnumAsByte<ETrackingState::Type>& TrackingState);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static FQuat UKinectFunctionLibrary::MultiplyQuat(const FQuat&amp; A, const FQuat&amp;
@@ -500,7 +500,7 @@ public:
 
 		 static FQuat MultiplyQuat(const FQuat& A, const FQuat& B);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static void UKinectFunctionLibrary::QuatToAxisOutAngle(const FQuat&amp; InQuat,
@@ -519,7 +519,7 @@ public:
 
 		 static void QuatToAxisOutAngle(const FQuat& InQuat, FVector& OutAxis, float &OutAngle);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static float UKinectFunctionLibrary::DegreesToRadians(const float &amp;InDegrees);
@@ -538,7 +538,7 @@ public:
 
 		 static float DegreesToRadians(const float &InDegrees);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static float UKinectFunctionLibrary::RadiansToDegrees(const float &amp;InRadians);
@@ -557,7 +557,7 @@ public:
 
 		 static float RadiansToDegrees(const float &InRadians);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Body")
 
 		/**************************************************************************************************
 		 * Gets the parent of this item.
@@ -571,7 +571,7 @@ public:
 
 		 static TEnumAsByte<EJoint::Type> GetBoneParent(const TEnumAsByte<EJoint::Type> &InBone);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * Inverse transform.
@@ -584,25 +584,11 @@ public:
 
 		 static FTransform InverseTransform(const FTransform& InTransform);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 		static FRotator ConvertRotatorToLocal(const FRotator& WorldRotator, const FTransform& ParentTransform);
 
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * Multiply transform.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	A	The const FTransform&amp; to process.
-		 * @param	B	The const FTransform&amp; to process.
-		 *
-		 * @return	A FTransform.
-		 **************************************************************************************************/
-
-		 static FTransform MultiplyTransform(const FTransform& A, const FTransform& B);
-
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * Inverse quaternion.
@@ -615,7 +601,7 @@ public:
 
 		 static FQuat InverseQuat(const FQuat& InQuat);
 
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * Enables the body joystick.
@@ -626,7 +612,7 @@ public:
 
 		 static void EnableBodyJoystick(const bool& Enable);
 
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, Category = "Kinect|CoordianteMapper")
 
 		/**************************************************************************************************
 		 * Convert body point to screen point.
@@ -643,7 +629,7 @@ public:
 		 static FVector2D ConvertBodyPointToScreenPoint(const FVector& BodyPoint, int32 ScreenSizeX, int32 ScreenSizeY);
 
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|CoordianteMapper")
 
 		/**************************************************************************************************
 		 * Mirror kinect skeleton.
@@ -658,7 +644,7 @@ public:
 		 static TArray<FTransform> MirrorKinectSkeleton(const FBody& BodyToMirror, float PosLocScale = 1.f);
 
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * A kinect event manager*.
