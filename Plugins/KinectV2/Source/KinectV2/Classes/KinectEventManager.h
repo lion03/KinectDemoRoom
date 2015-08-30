@@ -100,29 +100,29 @@ public:
 
 		 void EnableMouseControl(bool MouseControl);
 	
-	UPROPERTY(BlueprintAssignable, Category = "Kinect")
-		FNewSkeletonDetectedEvent NewSkeletonDetectedEvent; ///< The new skeleton detected event
+	UPROPERTY(BlueprintAssignable, Category = "Kinect|EventDispatchers")
+		FNewSkeletonDetectedEvent NewSkeletonDetectedEvent; ///< Called when skeleton with new TrackingId Is detected
 
-	UPROPERTY(BlueprintAssignable, Category = "Kinect")
-		FKinectBodyEventSigneture KinectBodyEvent;  ///< The kinect body event
+	UPROPERTY(BlueprintAssignable, Category = "Kinect|EventDispatchers")
+		FKinectBodyEventSigneture KinectBodyEvent;  ///< Called when new body frame is generated and the TrackingId of that body is assigned
 
-	UPROPERTY(BlueprintAssignable, Category = "Kinect")
-		FNewKinectColorFrameEvent OnNewKinectColorFrame;	///< The on new kinect color frame
+	UPROPERTY(BlueprintAssignable, Category = "Kinect|EventDispatchers")
+		FNewKinectColorFrameEvent OnNewKinectColorFrame;	///< Called when new color frame is generated
 
-	UPROPERTY(BlueprintAssignable, Category = "Kinect")
-		FNewKinectDepthFrameEvent OnNewKinectDepthFrame;	///< The on new kinect depth frame
+	UPROPERTY(BlueprintAssignable, Category = "Kinect|EventDispatchers")
+		FNewKinectDepthFrameEvent OnNewKinectDepthFrame;	///< Called when new depth frame is generated
 
-	UPROPERTY(BlueprintAssignable, Category = "Kinect")
-		FNewKinectInfraredFrameEvent OnNewKinectInfraredFrame;  ///< The on new kinect infrared frame
+	UPROPERTY(BlueprintAssignable, Category = "Kinect|EventDispatchers")
+		FNewKinectInfraredFrameEvent OnNewKinectInfraredFrame;  ///< Called when new IR frame is generated
 
-	UPROPERTY(BlueprintAssignable, Category = "Kinect")
-		FKinectRawBodyFrameEvent RawBodyFrameEvent; ///< The raw body frame event
+	UPROPERTY(BlueprintAssignable, Category = "Kinect|EventDispatchers")
+		FKinectRawBodyFrameEvent RawBodyFrameEvent; ///< Called for every body frame generated
 
-	UPROPERTY(BlueprintAssignable, Category = "Kinect")
-		FSkeletonLostEvent SkeletonLostEvent;   ///< The skeleton lost event
+	UPROPERTY(BlueprintAssignable, Category = "Kinect|EventDispatchers")
+		FSkeletonLostEvent SkeletonLostEvent;   ///< Called when a skeleton with assigned TrackingId is no longer tracked
 
-	UPROPERTY(BlueprintAssignable, Category = "Kinect")
-		FNewKinectBodyIndexFrameEvent	OnBodyIndexFrameEvent;
+	UPROPERTY(BlueprintAssignable, Category = "Kinect|EventDispatchers")
+		FNewKinectBodyIndexFrameEvent	OnBodyIndexFrameEvent; ///< Called when new BodyInfex frame is generated
 		
 	/**************************************************************************************************
 	 * Gets control mouse.

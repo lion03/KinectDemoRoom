@@ -137,50 +137,6 @@ private:
 
 	FKinectV2InputDevice(const TSharedRef< FGenericApplicationMessageHandler >& MessageHandler);
 
-	/**************************************************************************************************
-	 * Sets enable one euro filter.
-	 *
-	 * @author	Leon Rosengarten
-	 * @param	enable	true to enable, false to disable.
-	 **************************************************************************************************/
-
-	virtual void SetEnableOneEuroFilter(bool enable);
-
-	/**************************************************************************************************
-	 * Sets one euro filter frequency.
-	 *
-	 * @author	Leon Rosengarten
-	 * @param	freq	The frequency.
-	 **************************************************************************************************/
-
-	virtual void SetOneEuroFilterFreq(float freq);
-
-	/**************************************************************************************************
-	 * Sets one euro filter minimum cutoff.
-	 *
-	 * @author	Leon Rosengarten
-	 * @param	minCutoff	The minimum cutoff.
-	 **************************************************************************************************/
-
-	virtual void SetOneEuroFilterMinCutoff(float minCutoff);
-
-	/**************************************************************************************************
-	 * Sets one euro filter beta.
-	 *
-	 * @author	Leon Rosengarten
-	 * @param	beta	The beta.
-	 **************************************************************************************************/
-
-	virtual void SetOneEuroFilterBeta(float beta);
-
-	/**************************************************************************************************
-	 * Sets one euro filter d cutoff.
-	 *
-	 * @author	Leon Rosengarten
-	 * @param	dCutoff	The cutoff.
-	 **************************************************************************************************/
-
-	virtual void SetOneEuroFilterDCutoff(float dCutoff);
 
 	/**************************************************************************************************
 	 * A kinect event manager*.
@@ -195,8 +151,6 @@ private:
 	bool Active;	///< true to active
 
 	bool BodyJoystickEnabled;   ///< true to enable, false to disable the body joystick
-
-	bool EnableOneEuroFilter;   ///< true to enable, false to disable the one euro filter
 
 	TSharedRef< FGenericApplicationMessageHandler > MessageHandler; ///< The message handler
 

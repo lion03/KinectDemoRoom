@@ -11,8 +11,11 @@
 #include "AllowWindowsPlatformTypes.h"
 #include "Kinect.h"
 #include "HideWindowsPlatformTypes.h"
+#include "BoneOrientationDoubleExponentialFilter.h"
 #include "KinectFunctionLibrary.generated.h"
 
+
+#pragma region Kinect Types
 
 UENUM(BlueprintType)
 namespace EJoint{
@@ -71,6 +74,14 @@ namespace EHandState {
 
 }
 
+UENUM()
+enum class EKinectStreamType : uint8
+{
+	KST_Color UMETA(DisplayName = "Color Stream"),
+	KST_Depth UMETA(DisplayName = "Depth Stream"),
+	KST_IR UMETA(DisplayName = "IR Stream"),
+	KST_BodyIndex UMETA(DisplayName = "Body Index Stream"),
+};
 
 USTRUCT(BlueprintType)
 struct KINECTV2_API FKinectBone
@@ -231,29 +242,21 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,EditFixedSize, Category = "Kinect")
 		TArray<FBody> Bodies;   ///< The bodies
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Kinect")
 		FPlane FloorPlane;  ///< The floor plane
 
 
 };
+
+#pragma endregion
+
+#pragma region Delegates
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FBodyFrameEventSigneture, const FBodyFrame&);
 
 DECLARE_DELEGATE_OneParam(FEnableBodyJoystick, const bool&);
 
 DECLARE_DELEGATE_RetVal_ThreeParams(FVector2D, FMapBodyCoordToScreenCoord, const FVector&, int32, int32);
-
-DECLARE_DELEGATE_OneParam(FOneEuroFilterSetEnableEvent, bool);
-
-DECLARE_DELEGATE_OneParam(FOneEuroFilterSetFreqEvent, float);
-
-DECLARE_DELEGATE_OneParam(FOneEuroFilterSetMinCutoffEvent, float);
-
-DECLARE_DELEGATE_OneParam(FOneEuroFilterSetBetaEvent, float);
-
-DECLARE_DELEGATE_OneParam(FOneEuroFilterSetDCutOffEvent, float);
-
-DECLARE_DELEGATE_FourParams(FOneEuroFilterSetFilterParamsEvent, float, float, float, float);
 
 DECLARE_DELEGATE_RetVal(class UKinectEventManager*, FGetKinectManegerEvent);
 
@@ -263,7 +266,10 @@ DECLARE_DELEGATE(FStartSensorEvent);
 
 DECLARE_DELEGATE(FShutdownSensorEvent);
 
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FNewSkeletonDetectedEventTest, const struct FBody&, NewBody);
+DECLARE_DELEGATE_OneParam(FMapColorFrameToDepthSpace, TArray<FVector2D>&);
+
+#pragma endregion
+
 
 UCLASS()
 class KINECTV2_API UKinectFunctionLibrary : public UBlueprintFunctionLibrary
@@ -279,7 +285,7 @@ public:
 	friend class UVisualGestureImporterFactory;
 
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect", meta = (NativeMakeFunc))
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect|Math", meta = (NativeMakeFunc))
 
 		/**************************************************************************************************
 		 * \fn	static FQuat UKinectFunctionLibrary::MakeQuat(float x, float y, float z, float w);
@@ -302,7 +308,7 @@ public:
 
 		 static FQuat MakeQuat(float x, float y, float z, float w);
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect", meta = (NativeBreakFunc))
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect|Math", meta = (NativeBreakFunc))
 
 		/**************************************************************************************************
 		 * \fn	static void UKinectFunctionLibrary::BreakQuat(const FQuat&amp; InQuat, float&amp; x,
@@ -324,7 +330,7 @@ public:
 
 		 static void BreakQuat(const FQuat& InQuat, float& x, float& y, float& z, float& w);
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * Convert quaternion to rotator.
@@ -337,7 +343,7 @@ public:
 
 		 static FRotator Conv_QuatToRotator(const FQuat& InQuat);
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static FQuat UKinectFunctionLibrary::Conv_Vector4ToQuat(const FVector4&amp; InVec);
@@ -356,7 +362,7 @@ public:
 
 		 static FQuat Conv_Vector4ToQuat(const FVector4& InVec);
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static FRotator UKinectFunctionLibrary::Vec4QuatToRotator(const FVector4&amp; TheVec);
@@ -375,7 +381,7 @@ public:
 
 		 static FRotator Vec4QuatToRotator(const FVector4& TheVec);
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static FQuat UKinectFunctionLibrary::RotatorToQuat(const FRotator&amp; TheRotator);
@@ -407,7 +413,7 @@ public:
 
 		 static void BreakBodyFrame(const FBodyFrame& InBodyFrame, TArray<FBody> &Bodies);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect", meta = (NativeBreakFunc))
+	UFUNCTION(BlueprintPure, Category = "Kinect|Body", meta = (NativeBreakFunc))
 
 		/**************************************************************************************************
 		 * Break vector 4.
@@ -423,7 +429,7 @@ public:
 
 		 static void BreakVector4(const FVector4& InVector, float& X, float& Y, float& Z, float& W);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect", meta = (NativeMakeFunc))
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math", meta = (NativeMakeFunc))
 
 		/**************************************************************************************************
 		 * Makes vector 4.
@@ -440,7 +446,7 @@ public:
 
 		 static FVector4 MakeVector4(const float& X, const float& Y, const float& Z, const float& W);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect", meta = (NativeBreakFunc))
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math", meta = (NativeBreakFunc))
 
 		/**************************************************************************************************
 		 * Break body.
@@ -454,7 +460,7 @@ public:
 
 		 static void BreakBody(const FBody& InBody, TArray<FTransform> &BoneTransforms, bool &IsTracked);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect", meta = (NativeBreakFunc))
+	UFUNCTION(BlueprintPure, Category = "Kinect|Body", meta = (NativeBreakFunc))
 
 		/**************************************************************************************************
 		 * Break kinect bone.
@@ -473,7 +479,7 @@ public:
 		 TEnumAsByte<EJoint::Type>& JointTypeEnd,
 		 FQuat& Orientation, FVector& CameraSpacePoint, TEnumAsByte<ETrackingState::Type>& TrackingState);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static FQuat UKinectFunctionLibrary::MultiplyQuat(const FQuat&amp; A, const FQuat&amp;
@@ -494,7 +500,7 @@ public:
 
 		 static FQuat MultiplyQuat(const FQuat& A, const FQuat& B);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static void UKinectFunctionLibrary::QuatToAxisOutAngle(const FQuat&amp; InQuat,
@@ -513,7 +519,7 @@ public:
 
 		 static void QuatToAxisOutAngle(const FQuat& InQuat, FVector& OutAxis, float &OutAngle);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static float UKinectFunctionLibrary::DegreesToRadians(const float &amp;InDegrees);
@@ -532,7 +538,7 @@ public:
 
 		 static float DegreesToRadians(const float &InDegrees);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * \fn	static float UKinectFunctionLibrary::RadiansToDegrees(const float &amp;InRadians);
@@ -551,7 +557,7 @@ public:
 
 		 static float RadiansToDegrees(const float &InRadians);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Body")
 
 		/**************************************************************************************************
 		 * Gets the parent of this item.
@@ -565,7 +571,7 @@ public:
 
 		 static TEnumAsByte<EJoint::Type> GetBoneParent(const TEnumAsByte<EJoint::Type> &InBone);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * Inverse transform.
@@ -578,25 +584,11 @@ public:
 
 		 static FTransform InverseTransform(const FTransform& InTransform);
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 		static FRotator ConvertRotatorToLocal(const FRotator& WorldRotator, const FTransform& ParentTransform);
 
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * Multiply transform.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	A	The const FTransform&amp; to process.
-		 * @param	B	The const FTransform&amp; to process.
-		 *
-		 * @return	A FTransform.
-		 **************************************************************************************************/
-
-		 static FTransform MultiplyTransform(const FTransform& A, const FTransform& B);
-
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * Inverse quaternion.
@@ -609,7 +601,7 @@ public:
 
 		 static FQuat InverseQuat(const FQuat& InQuat);
 
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * Enables the body joystick.
@@ -620,7 +612,7 @@ public:
 
 		 static void EnableBodyJoystick(const bool& Enable);
 
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
+	UFUNCTION(BlueprintCallable, Category = "Kinect|CoordianteMapper")
 
 		/**************************************************************************************************
 		 * Convert body point to screen point.
@@ -637,7 +629,7 @@ public:
 		 static FVector2D ConvertBodyPointToScreenPoint(const FVector& BodyPoint, int32 ScreenSizeX, int32 ScreenSizeY);
 
 
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|CoordianteMapper")
 
 		/**************************************************************************************************
 		 * Mirror kinect skeleton.
@@ -651,104 +643,8 @@ public:
 
 		 static TArray<FTransform> MirrorKinectSkeleton(const FBody& BodyToMirror, float PosLocScale = 1.f);
 
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
 
-		/**************************************************************************************************
-		 * One euro filter set enable.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	Enable	true to enable, false to disable.
-		 **************************************************************************************************/
-
-		 static void OneEuroFilterSetEnable(bool Enable);
-
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * One euro filter set frequency.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	Freq	The frequency.
-		 **************************************************************************************************/
-
-		 static void OneEuroFilterSetFreq(float Freq);
-
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * One euro filter set minimum cutoff.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	MinCutoff	The minimum cutoff.
-		 **************************************************************************************************/
-
-		 static void OneEuroFilterSetMinCutoff(float MinCutoff);
-
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * One euro filter set beta.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	Beta	The beta.
-		 **************************************************************************************************/
-
-		 static void OneEuroFilterSetBeta(float Beta);
-
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * One euro filter set d cut off.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	DCutoff	The cutoff.
-		 **************************************************************************************************/
-
-		 static void OneEuroFilterSetDCutOff(float DCutoff);
-
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * One euro filter set filter parameters.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param	freq	 	The frequency.
-		 * @param	minCutoff	The minimum cutoff.
-		 * @param	beta	 	The beta.
-		 * @param	dCutoff  	The cutoff.
-		 **************************************************************************************************/
-
-		 static void OneEuroFilterSetFilterParams(float freq, float minCutoff, float beta, float dCutoff);
-	UFUNCTION(BlueprintCallable, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * Filters.
-		 *
-		 * @author	Leon Rosengarten
-		 *
-		 * @param	KinectBoneTransforms	The kinect bone transforms.
-		 * @param	timeStamp				(Optional) the time stamp.
-		 *
-		 * @return	A TArray&lt;FTransform&gt;
-		 **************************************************************************************************/
-
-		 static TArray<FTransform> Filter(const TArray<FTransform>& KinectBoneTransforms, float timeStamp = -1.f);
-
-	UFUNCTION(BlueprintPure, Category = "Kinect")
-
-		/**************************************************************************************************
-		 * Gets kinect function library instance.
-		 *
-		 * @author	Leon Rosengarten
-		 * @param [in,out]	IsValid	The is valid.
-		 *
-		 * @return	null if it fails, else the kinect function library instance.
-		 **************************************************************************************************/
-
-		 static UKinectFunctionLibrary* GetKinectFunctionLibraryInstance(bool& IsValid);
-
-
-	UFUNCTION(BlueprintPure, Category = "Kinect")
+	UFUNCTION(BlueprintPure, Category = "Kinect|Math")
 
 		/**************************************************************************************************
 		 * A kinect event manager*.
@@ -760,18 +656,51 @@ public:
 
 
 	UFUNCTION(BlueprintCallable, Category = "Kinect")
+
+		/**********************************************************************************************//**
+		 * Starts a sensor.
+		 *
+		 * @author	Leon Rosengarten
+		 * @date	26-13-2015
+		 **************************************************************************************************/
+
 		static void StartSensor();
 
 	UFUNCTION(BlueprintCallable, Category = "Kinect")
+
+		/**********************************************************************************************//**
+		 * Shutdown sensor.
+		 *
+		 * @author	Leon Rosengarten
+		 * @date	26-13-2015
+		 **************************************************************************************************/
+
 		static void ShutdownSensor();
 		
-
-
-	static FKinectV2InputDevice* GetKinectInputDevice();
-
-private:
-
 	
+	UFUNCTION(BlueprintCallable, Category = "Kinect|Filters")
+
+		/**********************************************************************************************//**
+		 * Gets smoothed joint.
+		 *
+		 * @author	Leon
+		 * @date	26-Aug-15
+		 *
+		 * @param [in,out]	InFilter	A filter specifying the in.
+		 * @param	InBody				The in body.
+		 *
+		 * @return	The smoothed joint.
+		 **************************************************************************************************/
+
+		static FBody GetSmoothedJoint(UPARAM(ref) FBoneOrientationDoubleExponentialFilter& InFilter, const FBody& InBody);
+
+
+	UFUNCTION(BlueprintCallable, Category = "Kinect")
+		static class UTexture2D* CreateStreamTexture(EKinectStreamType StreamType);
+
+	UFUNCTION(BlueprintCallable, Category = "Kinect")
+		static UTexture2D* MapColorFrameToDepthSpace(UPARAM(ref) UTexture2D* InTexture, UPARAM(ref) UTexture2D* DepthTexture);
+
 
 private:
 
@@ -781,18 +710,6 @@ private:
 
 	static FMapBodyCoordToScreenCoord MapBodyCoordToScreenCoordEvent;   ///< The map body coordinate to screen coordinate event
 
-	static FOneEuroFilterSetEnableEvent OneEuroFilterSetEnableEvent;	///< The one euro filter set enable event
-
-	static FOneEuroFilterSetFreqEvent OneEuroFilterSetFreqEvent;	///< The one euro filter set frequency event
-
-	static FOneEuroFilterSetMinCutoffEvent OneEuroFilterSetMinCutoffEvent;  ///< The one euro filter set minimum cutoff event
-
-	static FOneEuroFilterSetBetaEvent OneEuroFilterSetBetaEvent;	///< The one euro filter set beta event
-
-	static FOneEuroFilterSetDCutOffEvent OneEuroFilterSetDCutOffEvent;  ///< The one euro filter set d cut off event
-
-	static FOneEuroFilterSetFilterParamsEvent OneEuroFilterSetFilterParamsEvent;	///< A variable-length parameters list containing one euro filter set filter parameters event
-
 	static FGetKinectManegerEvent GetKinectManagerEvent;	///< The get kinect manager event
 
 	static FGetKinectInputDevice GetKinectInputDeviceEvent;
@@ -800,6 +717,8 @@ private:
 	static FStartSensorEvent StartSensorEvent;
 
 	static FShutdownSensorEvent ShutdownSensorEvent;
+
+	static FMapColorFrameToDepthSpace MapColorFrameToDepthSpaceEvent;
 
 	/**************************************************************************************************
 	 * \property	static TMap&lt;TEnumAsByte&lt;EJoint::Type&gt;, TEnumAsByte&lt;EJoint::Type&gt;&gt;

@@ -12,81 +12,6 @@
 
 #include "COMPointer.h"
 
-
-/*
-#include <DirectXMath.h>
-#include <queue>
-
-namespace Sample
-{
-	typedef struct _TRANSFORM_SMOOTH_PARAMETERS
-	{
-		float   fSmoothing;             // [0..1], lower values closer to raw data
-		float   fCorrection;            // [0..1], lower values slower to correct towards the raw data
-		float   fPrediction;            // [0..n], the number of frames to predict into the future
-		float   fJitterRadius;          // The radius in meters for jitter reduction
-		float   fMaxDeviationRadius;    // The maximum radius in meters that filtered positions are allowed to deviate from raw data
-	} TRANSFORM_SMOOTH_PARAMETERS;
-
-	// Holt Double Exponential Smoothing filter
-	class FilterDoubleExponentialData
-	{
-	public:
-		FVector m_vRawPosition;
-		FVector m_vFilteredPosition;
-		FVector m_vTrend;
-		uint32    m_dwFrameCount;
-	};
-
-	class FilterDoubleExponential
-	{
-	public:
-		FilterDoubleExponential() { Init(); }
-		~FilterDoubleExponential() { Shutdown(); }
-
-		void Init(float fSmoothing = 0.25f, float fCorrection = 0.25f, float fPrediction = 0.25f, float fJitterRadius = 0.03f, float fMaxDeviationRadius = 0.05f)
-		{
-			Reset(fSmoothing, fCorrection, fPrediction, fJitterRadius, fMaxDeviationRadius);
-		}
-
-		void Shutdown()
-		{
-		}
-
-		void Reset(float fSmoothing = 0.25f, float fCorrection = 0.25f, float fPrediction = 0.25f, float fJitterRadius = 0.03f, float fMaxDeviationRadius = 0.05f)
-		{
-			assert(m_pFilteredJoints);
-			assert(m_pHistory);
-
-			m_fMaxDeviationRadius = fMaxDeviationRadius; // Size of the max prediction radius Can snap back to noisy data when too high
-			m_fSmoothing = fSmoothing;                   // How much smothing will occur.  Will lag when too high
-			m_fCorrection = fCorrection;                 // How much to correct back from prediction.  Can make things springy
-			m_fPrediction = fPrediction;                 // Amount of prediction into the future to use. Can over shoot when too high
-			m_fJitterRadius = fJitterRadius;             // Size of the radius where jitter is removed. Can do too much smoothing when too high
-
-			memset(m_pFilteredJoints, 0, sizeof(FVector) * JointType_Count);
-			memset(m_pHistory, 0, sizeof(FilterDoubleExponentialData) * JointType_Count);
-		}
-
-		void Update(IBody* const pBody);
-		void Update(Joint joints[]);
-
-		inline const FVector* GetFilteredJoints() const { return &m_pFilteredJoints[0]; }
-
-	private:
-		FVector m_pFilteredJoints[JointType_Count];
-		FilterDoubleExponentialData m_pHistory[JointType_Count];
-		float m_fSmoothing;
-		float m_fCorrection;
-		float m_fPrediction;
-		float m_fJitterRadius;
-		float m_fMaxDeviationRadius;
-
-		void Update(Joint joints[], uint32 JointID, TRANSFORM_SMOOTH_PARAMETERS smoothingParams);
-	};
-}
-
-*/
 /**********************************************************************************************//**
  * A kinect sensor.
  *
@@ -224,6 +149,25 @@ public:
 
 	virtual FVector2D BodyToScreen(const FVector& bodyPoint, int32 width, int32 height);
 
+	/**********************************************************************************************//**
+	 * Map color frame to depth space.
+	 *
+	 * @author	Leon Rosengarten
+	 * @date	27-17-2015
+	 *
+	 * @param [in,out]	DepthSpacePoints	The depth space points.
+	 **************************************************************************************************/
+
+	void MapColorFrameToDepthSpace(TArray<FVector2D> &DepthSpacePoints);
+
+	/**********************************************************************************************//**
+	 * Query if this object is running.
+	 *
+	 * @author	Leon Rosengarten
+	 * @date	27-16-2015
+	 *
+	 * @return	true if running, false if not.
+	 **************************************************************************************************/
 
 	bool IsRunning();
 
@@ -314,6 +258,8 @@ private:
 	 **************************************************************************************************/
 
 	void UpdateTexture(UTexture2D* pTexture, const RGBQUAD* pData, uint32 SizeX, uint32 SizeY);
+
+
 
 private:
 
@@ -412,6 +358,9 @@ private:
 
 	BYTE					m_ucBodyIndexFrame[cInfraredWidth*cInfraredHeight];
 
+	uint16*                 m_usRawDepthBuffer;
+
+	TArray<FVector2D>		DepthSpacePointArray;
 
 };
 
