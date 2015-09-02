@@ -268,6 +268,12 @@ DECLARE_DELEGATE(FShutdownSensorEvent);
 
 DECLARE_DELEGATE_OneParam(FMapColorFrameToDepthSpace, TArray<FVector2D>&);
 
+DECLARE_DELEGATE_RetVal(UTexture2D*, FGetColorTextureEvent);
+
+DECLARE_DELEGATE_RetVal(UTexture2D*, FGetDepthTextureEvent);
+
+DECLARE_DELEGATE_RetVal(UTexture2D*, FGetInfraredTextureEvent);
+
 #pragma endregion
 
 
@@ -702,6 +708,15 @@ public:
 		static UTexture2D* MapColorFrameToDepthSpace(UPARAM(ref) UTexture2D* InTexture, UPARAM(ref) UTexture2D* DepthTexture);
 
 
+	UFUNCTION(BlueprintCallable, Category = "Kinect|Camera Streams")
+		static UTexture2D* GetColorFrameTexture();
+
+	UFUNCTION(BlueprintCallable, Category = "Kinect|Camera Streams")
+		static UTexture2D* GetDepthFrameTexture();
+
+	UFUNCTION(BlueprintCallable, Category = "Kinect|Camera Streams")
+		static UTexture2D* GetInfraredFrameTexture();
+
 private:
 
 	friend class FKinectV2InputDevice;
@@ -719,6 +734,12 @@ private:
 	static FShutdownSensorEvent ShutdownSensorEvent;
 
 	static FMapColorFrameToDepthSpace MapColorFrameToDepthSpaceEvent;
+
+	static FGetColorTextureEvent GetColorTextureEvent;
+
+	static FGetDepthTextureEvent GetDepthTextureEvent;
+
+	static FGetInfraredTextureEvent GetInfrearedTextureEvent;
 
 	/**************************************************************************************************
 	 * \property	static TMap&lt;TEnumAsByte&lt;EJoint::Type&gt;, TEnumAsByte&lt;EJoint::Type&gt;&gt;

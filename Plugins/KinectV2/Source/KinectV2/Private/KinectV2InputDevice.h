@@ -119,6 +119,11 @@ public:
 
 	virtual void EnableBodyJoystick(const bool& enable);
 
+	class UTexture2D* GetColorTexture();
+
+	class UTexture2D* GetDepthTexture();
+
+	class UTexture2D* GetInfraredTexture();
 	
 
 private:

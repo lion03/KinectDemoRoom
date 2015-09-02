@@ -124,6 +124,10 @@ FKinectV2InputDevice::FKinectV2InputDevice(const TSharedRef< FGenericApplication
 
 	KinectSensor = TSharedPtr<FKinectSensor>(new FKinectSensor());
 
+	KinectSensor->ColorFrameTexture = ColorFrame;
+	KinectSensor->DepthFrameTexture = DepthFrame;
+	KinectSensor->InfraredFrameTexture = InfraredFrame;
+
 	UKinectFunctionLibrary::StartSensorEvent.BindRaw(KinectSensor.Get(), &FKinectSensor::StartSensor);
 	UKinectFunctionLibrary::ShutdownSensorEvent.BindRaw(KinectSensor.Get(), &FKinectSensor::ShutDownSensor);
 	UKinectFunctionLibrary::MapBodyCoordToScreenCoordEvent.BindRaw(KinectSensor.Get(), &FKinectSensor::BodyToScreen);
@@ -145,6 +149,9 @@ FKinectV2InputDevice::FKinectV2InputDevice(const TSharedRef< FGenericApplication
 
 	UKinectFunctionLibrary::GetKinectManagerEvent.BindRaw(this, &FKinectV2InputDevice::GetKinectManeger);
 	UKinectFunctionLibrary::GetKinectInputDeviceEvent.BindRaw(this, &FKinectV2InputDevice::GetKinectInputDevice);
+	UKinectFunctionLibrary::GetColorTextureEvent.BindRaw(this, &FKinectV2InputDevice::GetColorTexture);
+	UKinectFunctionLibrary::GetDepthTextureEvent.BindRaw(this, &FKinectV2InputDevice::GetDepthTexture);
+	UKinectFunctionLibrary::GetInfrearedTextureEvent.BindRaw(this, &FKinectV2InputDevice::GetInfraredTexture);
 }
 
 FKinectV2InputDevice::~FKinectV2InputDevice(){
@@ -185,6 +192,21 @@ void FKinectV2InputDevice::EnableBodyJoystick(const bool& enable){
 
 }
 
+UTexture2D* FKinectV2InputDevice::GetColorTexture()
+{
+	return ColorFrame;
+}
+
+class UTexture2D* FKinectV2InputDevice::GetDepthTexture()
+{
+	return DepthFrame;
+}
+
+class UTexture2D* FKinectV2InputDevice::GetInfraredTexture()
+{
+	return InfraredFrame;
+}
+
 void FKinectV2InputDevice::Tick(float dt){
 
 }
@@ -210,11 +232,12 @@ void FKinectV2InputDevice::SendControllerEvents(){
 					MessageHandler->OnMouseMove();
 				}
 			}
+			/*
 			if (KinectManeger->OnNewKinectColorFrame.IsBound()){
 				KinectSensor->UpdateColorTexture(ColorFrame);
 				KinectManeger->OnNewKinectColorFrame.Broadcast(ColorFrame);
 			}
-
+			
 			if (KinectManeger->OnNewKinectDepthFrame.IsBound())
 			{
 				KinectSensor->UpdateDepthFrameTexture(DepthFrame);
@@ -227,7 +250,7 @@ void FKinectV2InputDevice::SendControllerEvents(){
 				KinectSensor->UpdateInfraredTexture(InfraredFrame);
 				KinectManeger->OnNewKinectInfraredFrame.Broadcast(InfraredFrame);
 			}
-
+			*/
 			if (KinectManeger->OnBodyIndexFrameEvent.IsBound())
 			{
 				KinectSensor->UpdateBodyIndexTexture(BodyIndexFrame);

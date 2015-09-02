@@ -21,6 +21,12 @@ FStartSensorEvent UKinectFunctionLibrary::StartSensorEvent;
 FShutdownSensorEvent UKinectFunctionLibrary::ShutdownSensorEvent;
 FMapColorFrameToDepthSpace UKinectFunctionLibrary::MapColorFrameToDepthSpaceEvent;
 
+FGetColorTextureEvent UKinectFunctionLibrary::GetColorTextureEvent;
+
+FGetDepthTextureEvent UKinectFunctionLibrary::GetDepthTextureEvent;
+
+FGetInfraredTextureEvent UKinectFunctionLibrary::GetInfrearedTextureEvent;
+
 #pragma endregion
 
 #pragma region Kinect Data Convertion
@@ -603,6 +609,36 @@ UTexture2D* UKinectFunctionLibrary::MapColorFrameToDepthSpace(UTexture2D* InText
 
 }
 
+
+UTexture2D* UKinectFunctionLibrary::GetColorFrameTexture()
+{
+	if (GetColorTextureEvent.IsBound())
+	{
+		return GetColorTextureEvent.Execute();
+	}
+
+	return nullptr;
+}
+
+UTexture2D* UKinectFunctionLibrary::GetDepthFrameTexture()
+{
+	if (GetDepthTextureEvent.IsBound())
+	{
+		return GetDepthTextureEvent.Execute();
+	}
+
+	return nullptr;
+}
+
+UTexture2D* UKinectFunctionLibrary::GetInfraredFrameTexture()
+{
+	if (GetInfrearedTextureEvent.IsBound())
+	{
+		return GetInfrearedTextureEvent.Execute();
+	}
+
+	return nullptr;
+}
 
 UTexture2D* UKinectFunctionLibrary::CreateStreamTexture(EKinectStreamType StreamType)
 {

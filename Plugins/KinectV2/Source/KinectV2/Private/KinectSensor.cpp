@@ -9,6 +9,8 @@
 #include "KinectSensor.h"
 #include "AllowWindowsPlatformTypes.h"
 
+#include "RHI.h"
+
 #define BODY_WAIT_OBJECT WAIT_OBJECT_0
 #define COLOR_WAIT_OBJECT WAIT_OBJECT_0 + 1
 #define INFRARED_WAIT_OBJECT WAIT_OBJECT_0 + 2
@@ -277,7 +279,7 @@ bool FKinectSensor::Init(){
 	{
 
 		hr = m_pKinectSensor->get_BodyIndexFrameSource(&pBodyIndexFrameSource);
-	
+
 	}
 	if (SUCCEEDED(hr)){
 
@@ -397,7 +399,7 @@ void FKinectSensor::ShutDownSensor()
 	if (pKinectThread) {
 
 		pKinectThread->Kill(true);
-		
+
 		delete pKinectThread;
 
 		pKinectThread = nullptr;
@@ -533,6 +535,47 @@ void FKinectSensor::ProcessBodyFrame(IBodyFrameArrivedEventArgs*pArgs)
 #pragma optimize("",on)
 #endif // DEBUG
 
+
+static void EnqueueFrameTextureUpdate(UTexture2D* TextureToUpdate, uint32 SizeX, uint32 SizeY, uint8* Buffer)
+{
+
+	const uint32 BufferPitch = SizeX * 4;
+
+	struct FUploadKinectColorTextureContext
+	{
+		uint8* Buffer;	// Render thread assumes ownership
+		uint32 BufferPitch;
+		FTexture2DResource* DestTextureResource;
+	} UploadWebCamTextureContext =
+	{
+		Buffer,
+		BufferPitch,
+		(FTexture2DResource*)TextureToUpdate->Resource
+	};
+
+	ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
+		UpdateFrameTexture,
+		FUploadKinectColorTextureContext, Context, UploadWebCamTextureContext,
+		{
+			const FUpdateTextureRegion2D UpdateRegion(
+			0, 0,		// Dest X, Y
+			0, 0,		// Source X, Y
+			Context.DestTextureResource->GetSizeX(),	// Width
+			Context.DestTextureResource->GetSizeY());	// Height
+
+			RHIUpdateTexture2D(
+				Context.DestTextureResource->GetTexture2DRHI(),	// Destination GPU texture
+				0,												// Mip map index
+				UpdateRegion,									// Update region
+				Context.BufferPitch,						// Source buffer pitch
+				Context.Buffer);							// Source buffer pointer
+
+			// Delete the buffer now that we've uploaded the bytes
+			delete[] Context.Buffer;
+		}
+	);
+}
+
 /**********************************************************************************************//**
  * Process the color frame described by pArgs.
  *
@@ -549,15 +592,35 @@ void FKinectSensor::ProcessColorFrame(IColorFrameArrivedEventArgs*pArgs)
 	HRESULT hr = pArgs->get_FrameReference(&pColorFrameReferance);
 
 	if (SUCCEEDED(hr)){
+
 		TComPtr<IColorFrame> pColorFrame = nullptr;
+
 		if (SUCCEEDED(pColorFrameReferance->AcquireFrame(&pColorFrame))){
-			RGBQUAD *pColorBuffer = NULL;
-			pColorBuffer = m_pColorFrameRGBX;
+
 			uint32 nColorBufferSize = cColorWidth * cColorHeight * sizeof(RGBQUAD);
 			{
-				FScopeLock lock(&mColorCriticalSection);
-				hr = pColorFrame->CopyConvertedFrameDataToArray(nColorBufferSize, reinterpret_cast<BYTE*>(pColorBuffer), ColorImageFormat_Bgra);
-				m_bNewColorFrame = true;
+
+				const auto WebCamVideoBufferWidth = 1920;
+
+				const auto WebCamVideoBufferHeight = 1080;
+
+				const uint32 WebCamBufferPitch = WebCamVideoBufferWidth * 4;	// 4 bytes per pixel
+
+				uint8* ColorFrameBuffer = new uint8[WebCamBufferPitch * WebCamVideoBufferHeight];
+
+
+				hr = pColorFrame->CopyConvertedFrameDataToArray(nColorBufferSize, reinterpret_cast<uint8*>(ColorFrameBuffer), ColorImageFormat_Bgra);
+
+				if (SUCCEEDED(hr))
+				{
+
+					EnqueueFrameTextureUpdate(ColorFrameTexture, cColorWidth, cColorHeight, ColorFrameBuffer);
+					
+				}
+				else
+				{
+					delete[] ColorFrameBuffer;
+				}
 			}
 		}
 		pColorFrame.Reset();
@@ -584,7 +647,7 @@ void FKinectSensor::ProcessInfraredFrame(IInfraredFrameArrivedEventArgs*pArgs)
 	HRESULT hr = pArgs->get_FrameReference(&pInfraredFrameReferance);
 
 	if (SUCCEEDED(hr)){
-		
+
 		TComPtr<IInfraredFrame> pInfraredFrame = nullptr;
 
 		if (SUCCEEDED(pInfraredFrameReferance->AcquireFrame(&pInfraredFrame))){
@@ -592,14 +655,21 @@ void FKinectSensor::ProcessInfraredFrame(IInfraredFrameArrivedEventArgs*pArgs)
 			uint16 pInfraredBuffer[nInfraredBufferSize];
 			//pInfraredBuffer = m_pColorFrameRGBX;
 			{
-				if (SUCCEEDED(pInfraredFrame->CopyFrameDataToArray(nInfraredBufferSize, pInfraredBuffer))){
-					FScopeLock lock(&mInfraredCriticalSection);
+				
 
-					ConvertInfraredData(pInfraredBuffer, m_pInfraredFrameRGBX);
+				if (SUCCEEDED(pInfraredFrame->CopyFrameDataToArray(nInfraredBufferSize, pInfraredBuffer)))
+				{
+					//FScopeLock lock(&mInfraredCriticalSection);
 
-					m_bNewInfraredFrame = true;
+
+					uint8* pInfraredRGBBuffer = new uint8[nInfraredBufferSize*4];
+
+					ConvertInfraredData(pInfraredBuffer, reinterpret_cast<RGBQUAD*>(pInfraredRGBBuffer));
+
+					EnqueueFrameTextureUpdate(InfraredFrameTexture, cInfraredWidth, cInfraredHeight, pInfraredRGBBuffer);
+
+					//m_bNewInfraredFrame = true;
 				}
-
 				//hr = pColorFrame->CopyConvertedFrameDataToArray(nColorBufferSize, reinterpret_cast<BYTE*>(pColorBuffer), ColorImageFormat_Bgra);
 			}
 		}
@@ -636,14 +706,18 @@ void FKinectSensor::ProcessDepthFrame(IDepthFrameArrivedEventArgs*pArgs)
 			const uint32 nBufferSize = cInfraredWidth*cInfraredHeight;
 
 			if (SUCCEEDED(pDepthFrame->get_DepthMaxReliableDistance(&nDepthMaxReliableDistance)) &&
-				SUCCEEDED(pDepthFrame->get_DepthMinReliableDistance(&nDepthMinReliableDistance))
-				){
+				SUCCEEDED(pDepthFrame->get_DepthMinReliableDistance(&nDepthMinReliableDistance)))
+			{
 
-				FScopeLock lock(&mDepthCriticalSection);
-				if (SUCCEEDED(pDepthFrame->CopyFrameDataToArray(nBufferSize, m_usRawDepthBuffer))){
-					ConvertDepthData(m_usRawDepthBuffer, m_pDepthFrameRGBX, nDepthMinReliableDistance, nDepthMaxReliableDistance);
+				//FScopeLock lock(&mDepthCriticalSection);
+				if (SUCCEEDED(pDepthFrame->CopyFrameDataToArray(nBufferSize, m_usRawDepthBuffer)))
+				{
+					uint8* pDepthRGBBuffer = new uint8[nBufferSize * 4];
 
-					m_bNewDepthFrame = true;
+					ConvertDepthData(m_usRawDepthBuffer, reinterpret_cast<RGBQUAD*>(pDepthRGBBuffer), nDepthMinReliableDistance, nDepthMaxReliableDistance);
+
+					EnqueueFrameTextureUpdate(DepthFrameTexture, cInfraredWidth, cInfraredHeight, pDepthRGBBuffer);
+
 				}
 			}
 
@@ -666,7 +740,7 @@ void FKinectSensor::ProcessDepthFrame(IDepthFrameArrivedEventArgs*pArgs)
 void FKinectSensor::UpdateColorTexture(UTexture2D*pTexture)
 {
 	SCOPE_CYCLE_COUNTER(STAT_KINECT_SENSOR_ColorUpdateTime);
-	
+
 	if (m_bNewColorFrame)
 	{
 		FScopeLock lock(&mColorCriticalSection);
@@ -687,7 +761,7 @@ void FKinectSensor::UpdateColorTexture(UTexture2D*pTexture)
 void FKinectSensor::UpdateInfraredTexture(UTexture2D*pTexture)
 {
 	SCOPE_CYCLE_COUNTER(STAT_KINECT_SENSOR_InfraredUpdateTime);
-	
+
 	if (m_bNewInfraredFrame)
 	{
 		FScopeLock lock(&mInfraredCriticalSection);
@@ -708,7 +782,7 @@ void FKinectSensor::UpdateInfraredTexture(UTexture2D*pTexture)
 void FKinectSensor::UpdateDepthFrameTexture(UTexture2D*pTexture)
 {
 	SCOPE_CYCLE_COUNTER(STAT_KINECT_SENSOR_DepthUpdateTime);
-	
+
 	if (m_bNewDepthFrame)
 	{
 		FScopeLock lock(&mDepthCriticalSection);
@@ -817,8 +891,8 @@ void FKinectSensor::ConvertDepthData(uint16*pDepthBuffer, RGBQUAD*pDepthRGBX, US
 
 
 		m_pCoordinateMapper->MapColorFrameToDepthSpace(cInfraredWidth*cInfraredHeight, m_usRawDepthBuffer,
-													   cColorWidth*cColorHeight,
-													   (DepthSpacePoint*)&DepthSpacePointArray[0]);
+			cColorWidth*cColorHeight,
+			(DepthSpacePoint*)&DepthSpacePointArray[0]);
 
 		RGBQUAD* pRGBX = pDepthRGBX;
 
@@ -922,7 +996,7 @@ void FKinectSensor::ConvertBodyIndexData(const TArray<uint8> BodyIndexBufferData
 				pRGBX->rgbBlue = (LUTColor & 0x0000ff00) >> 8;
 				pRGBX->rgbGreen = (LUTColor & 0x00ff0000) >> 16;
 				pRGBX->rgbRed = (LUTColor & 0xff000000) >> 24;
-			
+
 			}
 			else
 			{
@@ -938,11 +1012,11 @@ void FKinectSensor::ConvertBodyIndexData(const TArray<uint8> BodyIndexBufferData
 void FKinectSensor::UpdateBodyIndexTexture(UTexture2D* pTexture)
 {
 	SCOPE_CYCLE_COUNTER(STAT_KINECT_SENSOR_BodyIndexUpdateTime);
-	
+
 	if (m_bNewBodyIndexFrame)
 	{
 		FScopeLock lock(&mDepthCriticalSection);
 		UpdateTexture(pTexture, m_pBodyIndexFrameRGBX, 512, 424);
-		m_bNewBodyIndexFrame = false; 
+		m_bNewBodyIndexFrame = false;
 	}
 }

@@ -259,7 +259,13 @@ private:
 
 	void UpdateTexture(UTexture2D* pTexture, const RGBQUAD* pData, uint32 SizeX, uint32 SizeY);
 
+public:
 
+	UTexture2D* ColorFrameTexture;
+
+	UTexture2D* DepthFrameTexture;
+
+	UTexture2D* InfraredFrameTexture;
 
 private:
 

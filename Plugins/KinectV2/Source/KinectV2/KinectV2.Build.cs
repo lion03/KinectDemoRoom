@@ -40,6 +40,8 @@ namespace UnrealBuildTool.Rules
                     //"MSSpeech",
                     "InputCore",
                      "K4WLib",
+                     "RHI",
+                     "RenderCore",
                      "AnimGraphRuntime"
                    // "Slate"
 					// ... add other public dependencies that you statically link with here ...
